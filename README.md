@@ -43,4 +43,4 @@ Obviously this is where everyone starts, right? RIGHT? :roll_eyes:
 
 ![Example Workflow](workflows/ComfyUI_YFG_Comical-Example-Workflow.png)
 
-The workflow should be embedded in the file. If you can't get it to load, feel free to download and open the Workflow.json file.
+The workflow should be embedded in the file. If you can't get it to load, feel free to download and open the [workflow.json](workflows/ComfyUI_YFG_Comical-Example-Workflow.json) file.
