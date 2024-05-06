@@ -19,27 +19,27 @@ I have to give credit to at least those who's other custom nodes I use quite oft
 
 ## The nodes so far
 
-Image Histogram Generator
+### Image Histogram Generator
 
 ![Image Historgram Generator](img/imagehistogramgenerator.png)
 
 This node allows you to take an input image, calculate it's histogram for the color channels as well as the L channel and display a graphical representation of the data.
 
-Meme Generator
+### Meme Generator
 
 ![Meme Generator](img/memegenerator.png)
 
 OK there are probably 5 or 10 nodes already that do this and do it really well. I made one as I was learning to go beyond "Hello World" 
 
-Hello World
+### Hello World
 
 ![Hello World](img/helloworld.png)
 
 Obviously this is where everyone starts, right? RIGHT? :roll_eyes:
 
-### Examples
+## Examples
 
-## Sample Workflow
+### Sample Workflow
 
 ![Example Workflow](workflows/ComfyUI_YFG_Comical-Example-Workflow.png)
 
