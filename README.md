@@ -37,10 +37,10 @@ Hello World
 
 Obviously this is where everyone starts, right? RIGHT? :roll_eyes:
 
-## Examples
+### Examples
 
-Sample Workflow
+## Sample Workflow
 
-![Example Workflow](img/ComfyUI_YFG_Comical-Example-Workflow.png)
+![Example Workflow](workflows/ComfyUI_YFG_Comical-Example-Workflow.png)
 
 The workflow should be embedded in the file. If you can't get it to load, feel free to download and open the Workflow.json file.
