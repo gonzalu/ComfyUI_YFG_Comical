@@ -1,3 +1,9 @@
+"""
+@author: YFG
+@title: YFG Histogram
+@nickname: YFG Histogram
+@description: This extension calculates the histogram of an image and outputs the results as a graph image.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import torch

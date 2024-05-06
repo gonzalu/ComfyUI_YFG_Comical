@@ -1,3 +1,9 @@
+"""
+@author: YFG
+@title: YFG Meme Generator
+@nickname: YFG Meme Generator
+@description: This extension overlays a simple text string over an image and outputs the composited result.
+"""
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import torch

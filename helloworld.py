@@ -1,3 +1,9 @@
+"""
+@author: YFG
+@title: YFG Hello World
+@nickname: YFG Hello World
+@description: This extension just outputs Hello World! as a string.
+"""
 class HelloWorldNode:
     @classmethod
     def INPUT_TYPES(cls):
