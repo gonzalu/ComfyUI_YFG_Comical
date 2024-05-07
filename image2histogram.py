@@ -5,6 +5,7 @@
 @description: This extension calculates the histogram of an image and outputs the results as a graph image.
 """
 import numpy as np
+import cv2
 import matplotlib.pyplot as plt
 import torch
 
@@ -24,50 +25,56 @@ class ImageHistogramNode:
             image = image[0]  # Process only the first image if in batch
 
         # Convert torch tensor to numpy array and normalize to [0, 255]
-        image_np = image.permute(1, 2, 0).cpu().numpy()
+        if image.size(2) == 3:  # Correct order of dimensions (height, width, channels)
+            image_np = image.cpu().numpy()  # No need to permute
+        else:
+            raise ValueError("Unsupported image format with shape: {}".format(image.shape))
+
         image_np = (image_np * 255).astype(np.uint8)
 
-        # Calculate histograms for each channel
-        red_hist = np.histogram(image_np[:, :, 0], bins=256, range=(0, 255))[0]
-        green_hist = np.histogram(image_np[:, :, 1], bins=256, range=(0, 255))[0]
-        blue_hist = np.histogram(image_np[:, :, 2], bins=256, range=(0, 255))[0]
+        # Handle grayscale images by replicating the channels if only one channel is present
+        if image_np.shape[2] == 1:
+            image_np = np.repeat(image_np, 3, axis=2)
 
-        # Calculate luminosity histogram
-        luminosity = 0.2989 * image_np[:, :, 0] + 0.5870 * image_np[:, :, 1] + 0.1140 * image_np[:, :, 2]
-        lum_hist = np.histogram(luminosity, bins=256, range=(0, 255))[0]
+        # Split the channels
+        channels = cv2.split(image_np)
 
+        # Define a function to convert histogram to image using plt
         def hist_to_image(hist, color):
-            fig, ax = plt.subplots()
-            ax.fill_between(range(256), 0, hist, color=color, step='mid', alpha=0.7)
-            ax.set_facecolor("white")
-            ax.axis('off')
-            fig.patch.set_visible(False)
-            fig.canvas.draw()
+            plt.figure()
+            plt.hist(hist, bins=256, range=(0, 256), color=color, alpha=0.7)
+            plt.axis('off')
+            plt.gca().set_facecolor('white')
+            plt.gcf().set_size_inches(4, 4)
+            plt.gcf().canvas.draw()
 
-            # Convert plot to a numpy array
-            data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-            data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-            plt.close(fig)
+            # Convert plot to numpy array
+            data = np.frombuffer(plt.gcf().canvas.tostring_rgb(), dtype=np.uint8)
+            data = data.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+            plt.close()
             return torch.tensor(data).permute(2, 0, 1).float() / 255
 
         # Generate images for each channel with respective colors
-        red_image = hist_to_image(red_hist, 'red')
-        green_image = hist_to_image(green_hist, 'green')
-        blue_image = hist_to_image(blue_hist, 'blue')
-        lum_image = hist_to_image(lum_hist, 'gray')
+        red_image = hist_to_image(channels[2].ravel(), 'red')
+        green_image = hist_to_image(channels[1].ravel(), 'green')
+        blue_image = hist_to_image(channels[0].ravel(), 'blue')
+
+        # Calculate luminosity using the NTSC conversion formula
+        luminosity = 0.2989 * channels[2] + 0.5870 * channels[1] + 0.1140 * channels[0]
+        lum_image = hist_to_image(luminosity.ravel(), 'gray')
 
         # Create RGB Histogram by overlaying each color histogram
-        composite_fig, composite_ax = plt.subplots()
-        for hist, color in zip([red_hist, green_hist, blue_hist], ['red', 'green', 'blue']):
-            composite_ax.fill_between(range(256), 0, hist, color=color, alpha=0.5, step='mid')
-        composite_ax.set_facecolor("white")
-        composite_ax.axis('off')
-        composite_fig.patch.set_visible(False)
-        composite_fig.canvas.draw()
+        plt.figure()
+        for hist, color in zip([channels[2].ravel(), channels[1].ravel(), channels[0].ravel()], ['red', 'green', 'blue']):
+            plt.hist(hist, bins=256, range=(0, 256), color=color, alpha=0.5)
+        plt.axis('off')
+        plt.gca().set_facecolor('white')
+        plt.gcf().set_size_inches(4, 4)
+        plt.gcf().canvas.draw()
 
-        composite_data = np.frombuffer(composite_fig.canvas.tostring_rgb(), dtype=np.uint8)
-        composite_data = composite_data.reshape(composite_fig.canvas.get_width_height()[::-1] + (3,))
-        plt.close(composite_fig)
+        composite_data = np.frombuffer(plt.gcf().canvas.tostring_rgb(), dtype=np.uint8)
+        composite_data = composite_data.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+        plt.close()
         rgb_image = torch.tensor(composite_data).permute(2, 0, 1).float() / 255
 
         return red_image, green_image, blue_image, lum_image, rgb_image
