@@ -1,5 +1,5 @@
 
-# ComfyUI YouFunnyGuys Comical Custom Nodes
+# ComfyUI YFG Comical Custom Nodes
 
 This is a repository of ComfyUI custom nodes. I was looking for a node that provided some functionality and did not find one. So I decided to create one myself in order to have the functionality I desired as well as way to teach myself how to code.
 
