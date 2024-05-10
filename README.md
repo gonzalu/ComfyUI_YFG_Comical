@@ -10,6 +10,7 @@ I have to give credit to at least those who's other custom nodes I use quite oft
  - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
  - [MarasIT](https://github.com/davask/ComfyUI-MarasIT-Nodes)
  - [Dr.Lt.Data](https://github.com/ltdrdata)
+ - [melMas](https://github.com/melMass/comfy_mtb)
  - [rgthree](https://github.com/rgthree/rgthree-comfy)
  - [Akatsuzi](https://github.com/Suzie1)
  - [chrisgoringe](https://github.com/chrisgoringe/cg-use-everywhere)
@@ -19,11 +20,11 @@ I have to give credit to at least those who's other custom nodes I use quite oft
 
 ## The nodes so far
 
-### Image Histogram Generator
+### Image Histograms Generator
 
-![Image Historgram Generator](img/imagehistogramgenerator.png)
+![Image Historgrams Generator](img/imagehistogramsgenerator.png)
 
-This node allows you to take an input image, calculate it's histogram for the color channels as well as the L channel and display a graphical representation of the data.
+This node allows you to take an input image, calculate its histogram for the color channels as well as the L channel and display a graphical representation of the data.
 
 ### Meme Generator
 
