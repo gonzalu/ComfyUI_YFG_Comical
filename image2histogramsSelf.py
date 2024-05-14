@@ -5,14 +5,18 @@
 @description: This extension calculates the histogram of an image and outputs the results as graph images for individual channels as well as RGB and Luminosity.
 """
 from math import ceil, sqrt
-
 import torch
-from PIL import Image
+from PIL import Image, PngImagePlugin
 import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 from io import BytesIO
 from typing import List, Union
+import os
+import random
+import json
+import folder_paths
+from comfy.cli_args import args
 
 def hex_to_rgb(hex_color):
     try:
@@ -37,6 +41,12 @@ def tensor2pil(image: torch.Tensor) -> List[Image.Image]:
     return [Image.fromarray(np.clip(255.0 * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))]
 
 class ImageHistogramsSelfNode:
+    def __init__(self):
+        self.output_dir = folder_paths.get_temp_directory()
+        self.type = "temp"
+        self.prefix_append = "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for _ in range(5))
+        self.compress_level = 1
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -45,14 +55,19 @@ class ImageHistogramsSelfNode:
                 "histogram_type": (["RGB Histogram Filled", "RGB Histogram Lines", "Red Channel", "Green Channel", "Blue Channel", "Luminosity"], {"default": "RGB Histogram Filled"}),
                 "histogram_size": (["small", "medium", "large"], {"default": "medium"}),
             },
+            "hidden": {
+                "prompt": "PROMPT",
+                "extra_pnginfo": "EXTRA_PNGINFO"
+            },
         }
 
+    OUTPUT_NODE = True
     FUNCTION = "generate"
     RETURN_TYPES = ("IMAGE", "IMAGE")
     RETURN_NAMES = ("Original Image", "Histogram")
     CATEGORY = "YFG"
 
-    def generate(self, image: torch.Tensor, histogram_type="RGB Histogram Filled", histogram_size="medium"):
+    def generate(self, image: torch.Tensor, histogram_type="RGB Histogram Filled", histogram_size="medium", prompt=None, extra_pnginfo=None):
         if image.size(0) == 0:
             return (torch.zeros(0),)
 
@@ -75,7 +90,40 @@ class ImageHistogramsSelfNode:
 
         histogram = histogram_func(image_array, dpi)
 
-        return (pil2tensor(original_image), pil2tensor([histogram]))
+        # Save histogram image
+        save_result = self.save_images([histogram], filename_prefix="ComfyUI", prompt=prompt, extra_pnginfo=extra_pnginfo)
+
+        return {
+            "ui": save_result["ui"],
+            "result": (
+                pil2tensor(original_image),
+                pil2tensor([histogram]),
+            ),
+        }
+
+    def save_images(self, images: List[Image.Image], filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
+        filename_prefix += self.prefix_append
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].size[0], images[0].size[1])
+        results = list()
+        for batch_number, image in enumerate(images):
+            metadata = None
+            if not args.disable_metadata:
+                metadata = PngImagePlugin.PngInfo()
+                if prompt is not None:
+                    metadata.add_text("prompt", json.dumps(prompt))
+                if extra_pnginfo is not None:
+                    for x in extra_pnginfo:
+                        metadata.add_text(x, json.dumps(extra_pnginfo[x]))
+            filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
+            file = f"{filename_with_batch_num}_{counter:05}_.png"
+            image.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+            results.append({
+                "filename": file,
+                "subfolder": subfolder,
+                "type": self.type
+            })
+            counter += 1
+        return {"ui": {"images": results}}
 
     def generate_histogram_template(self, image, colors, dpi):
         plt.figure()
