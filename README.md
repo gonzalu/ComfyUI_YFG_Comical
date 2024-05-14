@@ -1,5 +1,7 @@
-
-# YFG Comical ComfyUI Custom Nodes :cat:
+<div align="center">
+# :cat:
+# YFG Comical ComfyUI Custom Nodes 
+</div>
 
 A collection of ComfyUI utility custom nodes. Hope these provide some functionality nopt offered in the core app or other custom nodes.
 
