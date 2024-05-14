@@ -1,10 +1,8 @@
 <p align="center">
-  <img src="img/cat-face.svg" width="250">
+  <img src="img/cat-face.svg" width="200">
 </p>
 
 <div align="center">
-
-# :cat:
 
 # YFG Comical ComfyUI Custom Nodes 
 
