@@ -1,10 +1,10 @@
-<div align="center" style="height: 300px;">
-
-:cat:
-
-</div>
+<p align="center">
+  <img src="img/cat-face.svg" width="250">
+</p>
 
 <div align="center">
+
+# :cat:
 
 # YFG Comical ComfyUI Custom Nodes 
 
