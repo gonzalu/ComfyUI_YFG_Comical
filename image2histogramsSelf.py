@@ -54,6 +54,8 @@ class ImageHistogramsSelfNode:
                 "image": ("IMAGE",),
                 "histogram_type": (["RGB Histogram Filled", "RGB Histogram Lines", "Red Channel", "Green Channel", "Blue Channel", "Luminosity"], {"default": "RGB Histogram Filled"}),
                 "histogram_size": (["small", "medium", "large"], {"default": "medium"}),
+                "preview": ("BOOLEAN", {"default": True}),
+                "display": (["histogram", "original"], {"default": "histogram"}),
             },
             "hidden": {
                 "prompt": "PROMPT",
@@ -67,7 +69,7 @@ class ImageHistogramsSelfNode:
     RETURN_NAMES = ("Original Image", "Histogram")
     CATEGORY = "YFG"
 
-    def generate(self, image: torch.Tensor, histogram_type="RGB Histogram Filled", histogram_size="medium", prompt=None, extra_pnginfo=None):
+    def generate(self, image: torch.Tensor, histogram_type="RGB Histogram Filled", histogram_size="medium", preview=True, display="histogram", prompt=None, extra_pnginfo=None):
         if image.size(0) == 0:
             return (torch.zeros(0),)
 
@@ -93,8 +95,16 @@ class ImageHistogramsSelfNode:
         # Save histogram image
         save_result = self.save_images([histogram], filename_prefix="ComfyUI", prompt=prompt, extra_pnginfo=extra_pnginfo)
 
+        ui_images = []
+        if preview:
+            if display == "original":
+                original_image_result = self.save_images(original_image, filename_prefix="ComfyUI_Original", prompt=prompt, extra_pnginfo=extra_pnginfo)
+                ui_images.append({"filename": original_image_result["ui"]["images"][0]["filename"], "type": self.type, "subfolder": original_image_result["ui"]["images"][0]["subfolder"]})
+            else:
+                ui_images.append({"filename": save_result["ui"]["images"][0]["filename"], "type": self.type, "subfolder": save_result["ui"]["images"][0]["subfolder"]})
+
         return {
-            "ui": save_result["ui"],
+            "ui": {"images": ui_images},
             "result": (
                 pil2tensor(original_image),
                 pil2tensor([histogram]),
