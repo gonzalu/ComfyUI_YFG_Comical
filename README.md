@@ -1,6 +1,10 @@
 <div align="center" style="height: 100px;">
 
-# :cat:
+:cat:
+
+</div>
+
+<div align="center">
 
 # YFG Comical ComfyUI Custom Nodes 
 
