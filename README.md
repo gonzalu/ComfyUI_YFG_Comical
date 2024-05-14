@@ -1,7 +1,7 @@
 
-# ComfyUI YFG Comical Custom Nodes
+# YFG Comical ComfyUI Custom Nodes :cat:
 
-This is a repository of ComfyUI custom nodes. I was looking for a node that provided some functionality and did not find one. So I decided to create one myself in order to have the functionality I desired as well as way to teach myself how to code.
+A collection of ComfyUI utility custom nodes. Hope these provide some functionality nopt offered in the core app or other custom nodes.
 
 ## Acknowledgements
 
