@@ -40,7 +40,7 @@ def tensor2pil(image: torch.Tensor) -> List[Image.Image]:
         return out
     return [Image.fromarray(np.clip(255.0 * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))]
 
-class ImageHistogramsSelfNode:
+class ImageHistogramsNodeCompact:
     def __init__(self):
         self.output_dir = folder_paths.get_temp_directory()
         self.type = "temp"
