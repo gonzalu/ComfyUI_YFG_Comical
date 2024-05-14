@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import torch
 
-class MemeGeneratorNode:
+class MemeGenerator_v1:
 
     _font_sizes = ["small", "medium", "large"]
     

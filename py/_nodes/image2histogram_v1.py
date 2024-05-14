@@ -3,7 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import torch
 
-class ImageHistogramNode:
+class ImageHistogram_v1:
     @classmethod
     def INPUT_TYPES(cls):
         return {"required": {"image": ("IMAGE", {})}}
