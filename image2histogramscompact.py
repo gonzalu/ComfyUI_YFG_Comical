@@ -1,7 +1,7 @@
 """
 @author: YFG
 @title: YFG Histograms
-@nickname: YFG Histograms
+@nickname: 🐱 YFG Histograms
 @description: This extension calculates the histogram of an image and outputs the results as graph images for individual channels as well as RGB and Luminosity.
 """
 from math import ceil, sqrt
