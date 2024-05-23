@@ -1,0 +1,14 @@
+[project]
+name = "comfyui_yfg_comical"
+description = "Image Historgram Generator - Outputs a set of images displaying the Histogram of the input image. Nodes: img2histograms, img2histogramsSelf"
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/gonzalu/ComfyUI_YFG_Comical"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI_YFG_Comical"
+Icon = ""
