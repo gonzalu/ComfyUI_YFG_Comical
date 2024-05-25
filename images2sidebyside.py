@@ -34,7 +34,7 @@ class ImagesSideBySideNode:
             "required": {
                 "image1": ("IMAGE",),
                 "image2": ("IMAGE",),
-                "mode": (["Split", "Side-by-Side"], {"default": "Side-by-Side"}),
+                "mode": (["Split", "Side-by-Side"], {"default": "Split"}),
                 "display": (["Side-by-Side", "Image 1", "Image 2"], {"default": "Side-by-Side"}),
                 "font_size": (["Small", "Medium", "Large"], {"default": "Medium"}),
                 "font_color": (["White", "Black", "Red", "Green", "Blue", "Yellow", "Brown", "Orange"], {"default": "White"}),
