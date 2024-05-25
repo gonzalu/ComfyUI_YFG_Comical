@@ -1,7 +1,7 @@
 """
 @author: YFG
 @title: YFG Histograms
-@nickname: 🐱 YFG Histograms
+@nickname: 🐯 YFG Histograms
 @description: This extension calculates the histogram of an image and outputs the results as graph images for individual channels as well as RGB and Luminosity.
 """
 from math import ceil, sqrt
@@ -48,7 +48,7 @@ class ImageHistogramsNode:
     FUNCTION = "generate"
     RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "IMAGE")
     RETURN_NAMES = ("Original Image", "RGB Histogram Filled", "RGB Histogram Lines", "Red Channel", "Green Channel", "Blue Channel", "Luminosity")
-    CATEGORY = "YFG"
+    CATEGORY = "🐯 YFG"
 
     def generate(self, image: torch.Tensor, histogram_size="medium"):
         if image.size(0) == 0:
