@@ -20,7 +20,7 @@ This node allows you to take an input image, calculate its histogram for the col
 
 ### Image Histograms Generator (compact)
 
-![Image Histograms Generator (compact)](img/image2histogramcompact.png)
+![Image Histograms Generator (compact)](img/image2histogramscompact.png)
 
 This version of the node reduces the number of outputs to just two: Original and Histogram. You have a choice of using the node as a preview node and chose what to dispolay in the node: The selected Histogram or the Orginal Image. The Histogram output will send the selected Histogramto the next node. 
 
