@@ -28,7 +28,7 @@ This version of the node reduces the number of outputs to just two: Original and
 
 ![Image Halftone Generator](img/image2halftone.png)
 
-*This node is based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui 
+*This node is based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui*
 
 This node generates a halftone image from the input image. It can self display and send the output to other downstream nodes. You have a choice of displaying either the Original Image ort the generated Halftone image. The display can also be turned off. 
 
