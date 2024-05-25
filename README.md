@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/cat-face.svg" width="200">
+  <img src="img/lion-face.svg" width="200">
 </p>
 
 <div align="center">
