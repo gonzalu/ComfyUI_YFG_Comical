@@ -8,7 +8,7 @@
 
 </div>
 
-A collection of ComfyUI utility custom nodes. Hope these provide some functionality nopt offered in the core app or other custom nodes.
+A collection of ComfyUI utility custom nodes. Hope these provide some functionality not offered in the core app or other custom nodes.
 
 ## Nodes
 
