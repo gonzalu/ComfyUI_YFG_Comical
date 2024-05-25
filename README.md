@@ -32,6 +32,16 @@ This version of the node reduces the number of outputs to just two: Original and
 
 This node generates a halftone image from the input image. It can self display and send the output to other downstream nodes. You have a choice of displaying either the Original Image ort the generated Halftone image. The display can also be turned off. 
 
+### Image Side by Side
+
+![Image Side-by-Side Generator](img/images2sidebysidesplit.png)
+
+This node generates either a Side-by-Side image of a Split image from two input images. You can turn on node self preview or send the resulting image to other downstream nodes. The header labels can be turned off and the font, size and color can also be selected. 
+
+Here is an example of the images Side by Side instead of split.
+
+![Image Side-by-Side Generator](img/images2sidebyside.png)
+
 ## Examples
 
 ### Sample Workflow

@@ -1,18 +1,74 @@
 {
-  "last_node_id": 66,
-  "last_link_id": 442,
+  "last_node_id": 24,
+  "last_link_id": 30,
   "nodes": [
     {
-      "id": 46,
-      "type": "LoadImage",
+      "id": 9,
+      "type": "image_halftone",
       "pos": [
-        60,
-        250
+        426.3881696197512,
+        655.0403089068607
       ],
       "size": [
-        330,
-        310
+        315,
+        482
       ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Halftone",
+          "type": "IMAGE",
+          "links": [
+            17
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "Original Image",
+          "type": "IMAGE",
+          "links": [
+            18
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "image_halftone"
+      },
+      "widgets_values": [
+        10,
+        1,
+        "No",
+        0,
+        15,
+        30,
+        45,
+        true,
+        "halftone"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "LoadImage",
+      "pos": [
+        30.79998779296875,
+        80
+      ],
+      "size": {
+        "0": 315,
+        "1": 314.0000305175781
+      },
       "flags": {},
       "order": 0,
       "mode": 0,
@@ -21,9 +77,12 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            425
+            19,
+            22,
+            23
           ],
-          "shape": 3
+          "shape": 3,
+          "slot_index": 0
         },
         {
           "name": "MASK",
@@ -36,29 +95,29 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        "mountains.png",
+        "AdobeStock_569372470_Preview.jpeg",
         "image"
       ]
     },
     {
-      "id": 44,
+      "id": 16,
       "type": "PreviewImage",
       "pos": [
-        720,
-        250
+        764.8114206835944,
+        205.7736797317505
       ],
-      "size": {
-        "0": 380,
-        "1": 310
-      },
+      "size": [
+        210,
+        246
+      ],
       "flags": {},
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 424
+          "link": 21
         }
       ],
       "properties": {
@@ -66,16 +125,91 @@
       }
     },
     {
-      "id": 50,
+      "id": 10,
       "type": "PreviewImage",
       "pos": [
-        740,
-        660
+        766.3881696197506,
+        655.0403089068607
       ],
-      "size": {
-        "0": 380,
-        "1": 310
-      },
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 17
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 11,
+      "type": "PreviewImage",
+      "pos": [
+        996.3881696197506,
+        675.0403089068607
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 18
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 24,
+      "type": "PreviewImage",
+      "pos": [
+        2054.5823731274418,
+        380
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 30
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 19,
+      "type": "PreviewImage",
+      "pos": [
+        1614.5823731274434,
+        380
+      ],
+      "size": [
+        210,
+        246
+      ],
       "flags": {},
       "order": 7,
       "mode": 0,
@@ -83,7 +217,7 @@
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 431
+          "link": 25
         }
       ],
       "properties": {
@@ -91,264 +225,461 @@
       }
     },
     {
-      "id": 48,
-      "type": "MarasitDisplayInfoNode",
+      "id": 23,
+      "type": "PreviewImage",
       "pos": [
-        730,
-        60
+        2054.5823731274418,
+        680
       ],
-      "size": {
-        "0": 320,
-        "1": 80
-      },
+      "size": [
+        210,
+        246
+      ],
       "flags": {},
-      "order": 5,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
-          "name": "text",
-          "type": "STRING",
-          "link": 432,
-          "widget": {
-            "name": "text"
-          },
-          "slot_index": 0
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": null,
-          "shape": 6
+          "name": "images",
+          "type": "IMAGE",
+          "link": 29
         }
       ],
       "properties": {
-        "Node name for S&R": "MarasitDisplayInfoNode"
-      },
-      "widgets_values": [
-        "",
-        "Hello World!"
-      ]
+        "Node name for S&R": "PreviewImage"
+      }
     },
     {
-      "id": 51,
-      "type": "meme_generator_node",
+      "id": 22,
+      "type": "PreviewImage",
       "pos": [
-        400,
-        660
+        1834.5823731274434,
+        680
       ],
-      "size": {
-        "0": 320,
-        "1": 80
-      },
+      "size": [
+        210,
+        246
+      ],
       "flags": {},
-      "order": 4,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
-          "name": "image_in",
+          "name": "images",
           "type": "IMAGE",
-          "link": 442
-        }
-      ],
-      "outputs": [
-        {
-          "name": "image_out",
-          "type": "IMAGE",
-          "links": [
-            431
-          ],
-          "shape": 3,
-          "slot_index": 0
+          "link": 28
         }
       ],
       "properties": {
-        "Node name for S&R": "meme_generator_node"
-      },
-      "widgets_values": [
-        "Change Meme",
-        "large"
-      ]
+        "Node name for S&R": "PreviewImage"
+      }
     },
     {
-      "id": 42,
-      "type": "image_histogram_node",
+      "id": 21,
+      "type": "PreviewImage",
       "pos": [
-        410,
-        250
+        1614.5823731274434,
+        680
       ],
-      "size": {
-        "0": 290,
-        "1": 110
-      },
+      "size": [
+        210,
+        246
+      ],
       "flags": {},
-      "order": 3,
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 27
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 18,
+      "type": "PreviewImage",
+      "pos": [
+        1834.5823731274434,
+        80
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 24
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 13,
+      "type": "image_histograms_node_compact",
+      "pos": [
+        424.81142068359367,
+        185.77367973175055
+      ],
+      "size": [
+        315,
+        362
+      ],
+      "flags": {},
+      "order": 1,
       "mode": 0,
       "inputs": [
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 425,
-          "slot_index": 0
+          "link": 19
         }
       ],
       "outputs": [
         {
-          "name": "Red Channel",
-          "type": "IMAGE",
-          "links": [],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "Green Channel",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "Blue Channel",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "Grayscale Channel",
-          "type": "IMAGE",
-          "links": [],
-          "shape": 3,
-          "slot_index": 3
-        },
-        {
-          "name": "RGB Histogram",
+          "name": "Original Image",
           "type": "IMAGE",
           "links": [
-            424
-          ],
-          "shape": 3,
-          "slot_index": 4
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "image_histogram_node"
-      }
-    },
-    {
-      "id": 49,
-      "type": "LoadImage",
-      "pos": [
-        50,
-        660
-      ],
-      "size": [
-        330,
-        310
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            442
+            20
           ],
           "shape": 3,
           "slot_index": 0
         },
         {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
+          "name": "Histogram",
+          "type": "IMAGE",
+          "links": [
+            21
+          ],
           "shape": 3,
           "slot_index": 1
         }
       ],
       "properties": {
-        "Node name for S&R": "LoadImage"
+        "Node name for S&R": "image_histograms_node_compact"
       },
       "widgets_values": [
-        "mountains.png",
-        "image"
+        "RGB Histogram Filled",
+        "medium",
+        true,
+        "histogram"
       ]
     },
     {
-      "id": 52,
-      "type": "hello_world",
+      "id": 15,
+      "type": "PreviewImage",
       "pos": [
-        490,
-        60
+        994.8114206835944,
+        185.77367973175055
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 17,
+      "type": "image_histograms_node",
+      "pos": [
+        1244.5823731274434,
+        80
       ],
       "size": {
-        "0": 210,
-        "1": 30
+        "0": 330,
+        "1": 178
       },
       "flags": {},
       "order": 2,
       "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
       "outputs": [
         {
-          "name": "message_out",
-          "type": "STRING",
+          "name": "Original Image",
+          "type": "IMAGE",
           "links": [
-            432
+            24
           ],
-          "shape": 3
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "RGB Histogram Filled",
+          "type": "IMAGE",
+          "links": [
+            25
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "RGB Histogram Lines",
+          "type": "IMAGE",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "Red Channel",
+          "type": "IMAGE",
+          "links": [
+            27
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "Green Channel",
+          "type": "IMAGE",
+          "links": [
+            28
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "Blue Channel",
+          "type": "IMAGE",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "Luminosity",
+          "type": "IMAGE",
+          "links": [
+            30
+          ],
+          "shape": 3,
+          "slot_index": 6
         }
       ],
       "properties": {
-        "Node name for S&R": "hello_world"
+        "Node name for S&R": "image_histograms_node"
+      },
+      "widgets_values": [
+        "medium"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "PreviewImage",
+      "pos": [
+        1835,
+        380
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 26
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
       }
     }
   ],
   "links": [
     [
-      424,
-      42,
+      17,
+      9,
+      0,
+      10,
+      0,
+      "IMAGE"
+    ],
+    [
+      18,
+      9,
+      1,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      19,
+      14,
+      0,
+      13,
+      0,
+      "IMAGE"
+    ],
+    [
+      20,
+      13,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      21,
+      13,
+      1,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      22,
+      14,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      14,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      17,
+      0,
+      18,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      17,
+      1,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      17,
+      2,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      17,
+      3,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      28,
+      17,
       4,
-      44,
+      22,
       0,
       "IMAGE"
     ],
     [
-      425,
-      46,
-      0,
-      42,
-      0,
-      "IMAGE"
-    ],
-    [
-      431,
-      51,
-      0,
-      50,
+      29,
+      17,
+      5,
+      23,
       0,
       "IMAGE"
     ],
     [
-      432,
-      52,
-      0,
-      48,
-      0,
-      "STRING"
-    ],
-    [
-      442,
-      49,
-      0,
-      51,
+      30,
+      17,
+      6,
+      24,
       0,
       "IMAGE"
     ]
   ],
-  "groups": [],
+  "groups": [
+    {
+      "title": "YFG Histograms Generator",
+      "bounding": [
+        1235,
+        6,
+        1040,
+        930
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false
+    },
+    {
+      "title": "YFG Histograms Generator (compact)",
+      "bounding": [
+        415,
+        112,
+        800,
+        446
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false
+    },
+    {
+      "title": "YFG Halftone Generator",
+      "bounding": [
+        416,
+        581,
+        800,
+        566
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false
+    }
+  ],
   "config": {},
   "extra": {
-    "groupNodes": {}
+    "ds": {
+      "scale": 0.90909090909091,
+      "offset": [
+        -15.269521904755617,
+        109.68339526890334
+      ]
+    }
   },
   "version": 0.4
 }
