@@ -1,9 +1,11 @@
 """
 @author: YFG
-@title: YFG Side by Side
-@nickname: 🐯 YFG Side by Side
-@description: This node combines two images either side by side or split.
+@title: YFG Histograms
+@nickname: 🐯 YFG Halftone
+@description: This node generates a halftone image from the input image.
 """
+
+## Based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui ##
 
 import folder_paths
 import torch
@@ -11,9 +13,11 @@ import numpy as np
 import os
 import random
 import json
-from PIL import Image, ImageDraw, ImageFont, PngImagePlugin
+from PIL import Image, ImageDraw, ImageOps, ImageStat, PngImagePlugin
 from typing import List, Union
+from io import BytesIO
 from comfy.cli_args import args
+from math import ceil, sqrt
 
 def tensor2pil(image):
     return Image.fromarray(np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
@@ -21,7 +25,7 @@ def tensor2pil(image):
 def pil2tensor(image):
     return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
 
-class ImagesSideBySideNode:
+class ImageHalftoneNode:
     def __init__(self):
         self.output_dir = folder_paths.get_temp_directory()
         self.type = "temp"
@@ -32,11 +36,16 @@ class ImagesSideBySideNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image1": ("IMAGE",),
-                "image2": ("IMAGE",),
-                "mode": (["Split", "Side-by-Side"], {"default": "Side-by-Side"}),
+                "image": ("IMAGE",),
+                "samples": ("INT", {"default": 10, "min": 1, "max": 32}),
+                "scaling": ("INT", {"default": 1, "min": 1, "max": 5}),
+                "grayscale": (["No", "Yes"], {"default":"No"}),
+                "angle_c": ("INT", {"default": 0, "min": 0, "max": 90}),
+                "angle_m": ("INT", {"default": 15, "min": 0, "max": 90}),
+                "angle_y": ("INT", {"default": 30, "min": 0, "max": 90}),
+                "angle_k": ("INT", {"default": 45, "min": 0, "max": 90}),
                 "preview": ("BOOLEAN", {"default": True}),
-                "display": (["sidebyside", "image1", "image2"], {"default": "sidebyside"}),
+                "display": (["halftone", "original"], {"default": "halftone"}),
             },
             "hidden": {
                 "prompt": "PROMPT",
@@ -45,118 +54,97 @@ class ImagesSideBySideNode:
         }
 
     OUTPUT_NODE = True
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("Combined Image",)
-    FUNCTION = "combine_images"
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("Halftone", "Original Image")
+    FUNCTION = "make_halftone"
     CATEGORY = "🐯 YFG"
 
-    def combine_images(self, image1, image2, mode, preview, display, prompt=None, extra_pnginfo=None):
-        pil_image1 = tensor2pil(image1)
-        pil_image2 = tensor2pil(image2)
+    def make_halftone(self, image, samples, scaling, grayscale, angle_c, angle_m, angle_y, angle_k, preview, display, prompt=None, extra_pnginfo=None):
+        tmpangles = [angle_c, angle_m, angle_y, angle_k]
 
-        if mode == "Split":
-            combined_image = self.make_split(pil_image1, pil_image2)
-        else:
-            combined_image = self.make_side_by_side(pil_image1, pil_image2)
+        original_image = tensor2pil(image)
+        halftone_image = self.make(sample=samples, scale=scaling, antialias=True, style="color" if grayscale == "No" else "grayscale", angles=tmpangles, imagePil=original_image)
         
         if not preview:
-            return (pil2tensor(combined_image),)
+            return (pil2tensor(halftone_image), pil2tensor(original_image))
         
         ui_images = []
-        if display == "image1":
-            image1_filename = self.save_image(pil_image1, "image1.png", prompt, extra_pnginfo)
-            ui_images.append({"filename": image1_filename, "type": self.type, "subfolder": self.output_dir})
-        elif display == "image2":
-            image2_filename = self.save_image(pil_image2, "image2.png", prompt, extra_pnginfo)
-            ui_images.append({"filename": image2_filename, "type": self.type, "subfolder": self.output_dir})
+        if display == "original":
+            original_image_filename = self.save_image(original_image, "original_image.png", prompt, extra_pnginfo)
+            ui_images.append({"filename": original_image_filename, "type": self.type, "subfolder": self.output_dir})
         else:
-            combined_image_filename = self.save_image(combined_image, "combined_image.png", prompt, extra_pnginfo)
-            ui_images.append({"filename": combined_image_filename, "type": self.type, "subfolder": self.output_dir})
+            halftone_image_filename = self.save_image(halftone_image, "halftone_image.png", prompt, extra_pnginfo)
+            ui_images.append({"filename": halftone_image_filename, "type": self.type, "subfolder": self.output_dir})
         
         return {
             "ui": {"images": ui_images},
-            "result": (pil2tensor(combined_image),),
+            "result": (pil2tensor(halftone_image), pil2tensor(original_image)),
         }
 
-    def make_side_by_side(self, image1, image2):
-        width1, height1 = image1.size
-        width2, height2 = image2.size
-        total_width = width1 + width2
-        max_height = max(height1, height2)
+    def make(self, sample=10, scale=1, percentage=0, filename_addition="_halftoned", angles=[0, 15, 30, 45], style="color", antialias=True, output_format="default", output_quality=95, save_channels=False, save_channels_format="default", save_channels_style="color", imagePil=None):
+        if style == "grayscale":
+            angles = angles[:1]
+            gray_im = imagePil.convert("L")
+            channel_images = self.halftone(imagePil, gray_im, sample, scale, angles, antialias)
+            new = channel_images[0]
+            new = new.convert("RGB")
+        else:
+            cmyk = self.gcr(imagePil, percentage)
+            channel_images = self.halftone(imagePil, cmyk, sample, scale, angles, antialias)
+            new = Image.merge("CMYK", channel_images)
+            new = new.convert("RGB")
+        return new
 
-        new_image = Image.new("RGB", (total_width, max_height))
-        new_image.paste(image1, (0, 0))
-        new_image.paste(image2, (width1, 0))
+    def gcr(self, imagePil, percentage):
+        cmyk_im = imagePil.convert("CMYK")
+        if not percentage:
+            return cmyk_im
+        cmyk_im = cmyk_im.split()
+        cmyk = [channel.load() for channel in cmyk_im]
+        for x in range(imagePil.size[0]):
+            for y in range(imagePil.size[1]):
+                gray = int(min(cmyk[0][x, y], cmyk[1][x, y], cmyk[2][x, y]) * percentage / 100)
+                for i in range(3):
+                    cmyk[i][x, y] = cmyk[i][x, y] - gray
+                cmyk[3][x, y] = gray
+        return Image.merge("CMYK", cmyk_im)
 
-        separator_x = width1
-        draw = ImageDraw.Draw(new_image)
-        third_height = max_height // 3
-
-        # Draw the white line
-        draw.line([(separator_x, 0), (separator_x, third_height)], fill="white", width=3)
-        draw.line([(separator_x, 2 * third_height), (separator_x, max_height)], fill="white", width=3)
-        draw.line([(separator_x, third_height), (separator_x, 2 * third_height)], fill="white", width=10)
-
-        # Draw the black outline
-        draw.line([(separator_x - 1, 0), (separator_x - 1, third_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, 0), (separator_x + 1, third_height)], fill="black", width=1)
-        draw.line([(separator_x - 1, 2 * third_height), (separator_x - 1, max_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, 2 * third_height), (separator_x + 1, max_height)], fill="black", width=1)
-        draw.line([(separator_x - 1, third_height), (separator_x - 1, 2 * third_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, third_height), (separator_x + 1, 2 * third_height)], fill="black", width=1)
-
-        return new_image
-
-    def make_split(self, image1, image2):
-        width1, height1 = image1.size
-        width2, height2 = image2.size
-        half_width1 = width1 // 2
-        half_width2 = width2 // 2
-        max_height = max(height1, height2)
-
-        new_image = Image.new("RGB", (half_width1 + half_width2, max_height))
-
-        left_half = image1.crop((0, 0, half_width1, height1))
-        right_half = image2.crop((width2 - half_width2, 0, width2, height2))
-
-        new_image.paste(left_half, (0, 0))
-        new_image.paste(right_half, (half_width1, 0))
-
-        draw = ImageDraw.Draw(new_image)
-        separator_x = half_width1
-        third_height = max_height // 3
-
-        # Draw the white line
-        draw.line([(separator_x, 0), (separator_x, third_height)], fill="white", width=3)
-        draw.line([(separator_x, 2 * third_height), (separator_x, max_height)], fill="white", width=3)
-        draw.line([(separator_x, third_height), (separator_x, 2 * third_height)], fill="white", width=10)
-
-        # Draw the black outline
-        draw.line([(separator_x - 1, 0), (separator_x - 1, third_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, 0), (separator_x + 1, third_height)], fill="black", width=1)
-        draw.line([(separator_x - 1, 2 * third_height), (separator_x - 1, max_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, 2 * third_height), (separator_x + 1, max_height)], fill="black", width=1)
-        draw.line([(separator_x - 1, third_height), (separator_x - 1, 2 * third_height)], fill="black", width=1)
-        draw.line([(separator_x + 1, third_height), (separator_x + 1, 2 * third_height)], fill="black", width=1)
-
-        # Add labels
-        font_size = 20
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except IOError:
-            font = ImageFont.load_default()
-        
-        text1 = "Image 1"
-        text2 = "Image 2"
-        text1_bbox = draw.textbbox((0, 0), text1, font=font)
-        text2_bbox = draw.textbbox((0, 0), text2, font=font)
-        text1_width = text1_bbox[2] - text1_bbox[0]
-        text2_width = text2_bbox[2] - text2_bbox[0]
-
-        draw.text((half_width1 // 2 - text1_width // 2, 10), text1, font=font, fill="white")
-        draw.text((half_width1 + half_width2 // 2 - text2_width // 2, 10), text2, font=font, fill="white")
-
-        return new_image
+    def halftone(self, imagePil, cmyk, sample, scale, angles, antialias):
+        antialias_scale = 4
+        if antialias:
+            scale *= antialias_scale
+        cmyk = cmyk.split()
+        dots = []
+        for channel, angle in zip(cmyk, angles):
+            channel = channel.rotate(angle, expand=1)
+            size = channel.size[0] * scale, channel.size[1] * scale
+            half_tone = Image.new("L", size)
+            draw = ImageDraw.Draw(half_tone)
+            for x in range(0, channel.size[0], sample):
+                for y in range(0, channel.size[1], sample):
+                    box = channel.crop((x, y, x + sample, y + sample))
+                    mean = ImageStat.Stat(box).mean[0]
+                    diameter = (mean / 255) ** 0.5
+                    box_size = sample * scale
+                    draw_diameter = diameter * box_size
+                    box_x, box_y = (x * scale), (y * scale)
+                    x1 = box_x + ((box_size - draw_diameter) / 2)
+                    y1 = box_y + ((box_size - draw_diameter) / 2)
+                    x2 = x1 + draw_diameter
+                    y2 = y1 + draw_diameter
+                    draw.ellipse([(x1, y1), (x2, y2)], fill=255)
+            half_tone = half_tone.rotate(-angle, expand=1)
+            width_half, height_half = half_tone.size
+            xx1 = (width_half - imagePil.size[0] * scale) / 2
+            yy1 = (height_half - imagePil.size[1] * scale) / 2
+            xx2 = xx1 + imagePil.size[0] * scale
+            yy2 = yy1 + imagePil.size[1] * scale
+            half_tone = half_tone.crop((xx1, yy1, xx2, yy2))
+            if antialias:
+                w, h = int((xx2 - xx1) / antialias_scale), int((yy2 - yy1) / antialias_scale)
+                half_tone = half_tone.resize((w, h), resample=Image.LANCZOS)
+            dots.append(half_tone)
+        return dots
 
     def save_image(self, image, filename, prompt=None, extra_pnginfo=None):
         # Ensure the directory exists
