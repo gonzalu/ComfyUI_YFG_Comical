@@ -22,7 +22,7 @@ This node allows you to take an input image, calculate its histogram for the col
 
 ![Image Histograms Generator (compact)](img/image2histogramscompact.png)
 
-This version of the node reduces the number of outputs to just two: Original and Histogram. You have a choice of using the node as a preview node and chose what to dispolay in the node: The selected Histogram or the Orginal Image. The Histogram output will send the selected Histogramto the next node. 
+This version of the node reduces the number of outputs to just two: Original and Histogram. You have a choice of using the node as a preview node and chose what to display in the node: The selected Histogram or the Orginal Image. The Histogram output will send the selected Histogram to the next node. 
 
 ### Image Halftone Generator
 
@@ -30,7 +30,7 @@ This version of the node reduces the number of outputs to just two: Original and
 
 *This node is based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui 
 
-This node generates a halftone image from the input image. It can self display and send the output to other downstream nodes. YOu have a choice of displaying either the Original Image ort the generated Halftone image. The display can also be turned off. 
+This node generates a halftone image from the input image. It can self display and send the output to other downstream nodes. You have a choice of displaying either the Original Image ort the generated Halftone image. The display can also be turned off. 
 
 ## Examples
 
