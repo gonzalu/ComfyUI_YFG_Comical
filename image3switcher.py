@@ -53,7 +53,7 @@ def generate_routing_diagram(selected_input):
 
     input_labels = ["Image 1", "Image 2", "Image 3"]
     output_label = "Output"
-    
+
     input_y_positions = [256, 512, 768]
     output_y_position = 512
 
@@ -139,7 +139,7 @@ class Image3SwitcherNode:
     RETURN_TYPES = ("IMAGE", "IMAGE")
     RETURN_NAMES = ("Selected Image", "Connection Diagram")
     FUNCTION = "select_image"
-    CATEGORY = "🐯 YFG"
+    CATEGORY = "🐯 YFG\Switchers"
 
     def select_image(self, **inputs):
         image1 = inputs.get("Image 1", None)
