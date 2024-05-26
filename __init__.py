@@ -2,7 +2,7 @@ from .image2histograms import ImageHistogramsNode
 from .image2histogramscompact import ImageHistogramsNodeCompact
 from .image2halftone import ImageHalftoneNode
 from .images2sidebyside import ImagesSideBySideNode
-from .image3switcher import Image3SwitcherNode
+from .switchers.image3switcher import Image3SwitcherNode
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,

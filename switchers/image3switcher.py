@@ -53,7 +53,7 @@ def generate_routing_diagram(selected_input):
 
     input_labels = ["Image 1", "Image 2", "Image 3"]
     output_label = "Output"
-
+    
     input_y_positions = [256, 512, 768]
     output_y_position = 512
 
@@ -90,17 +90,26 @@ def generate_routing_diagram(selected_input):
         input_position = input_y_positions[input_index]
 
         # Calculate positions for the line
-        start_x = 10 + text_width + 2 * padding + 20  # Move circle to the right
+        start_x = 10 + text_width + 2 * padding + 20  # Adjust to center circle on right edge of rectangle
         start_y = input_position
-        end_x = 1024 - 10 - text_width - 2 * padding - 40  # Move arrowhead to touch the left edge of the right rectangle
+        end_x = 1024 - 10 - text_width - 2 * padding - 50  # Adjust to make arrowhead touch the left edge of the output rectangle
         end_y = output_y_position
 
         # Draw line and arrowhead
         line_color = "#7f0000"
         line_width = 20
-        draw.line([(start_x, start_y), (512, start_y), (512, end_y), (end_x, end_y)], fill=line_color, width=line_width, joint="curve")
+
+        # Draw the horizontal part from input
+        draw.line([(start_x, start_y), (start_x + 50, start_y)], fill=line_color, width=line_width, joint="curve")
+        # Draw the horizontal part to output
+        draw.line([(end_x, end_y), (end_x + 50, end_y)], fill=line_color, width=line_width, joint="curve")
+        # Draw the main line with curved joints
+        draw.line([(start_x + 50, start_y), (end_x, end_y)], fill=line_color, width=line_width, joint="curve")
+
+        # Draw the circle centered on the right edge of the input rectangle
         draw.ellipse((start_x - 20, start_y - 20, start_x + 20, start_y + 20), fill=line_color)
-        arrow_head = [(end_x, end_y - 30), (end_x, end_y + 30), (end_x + 40, end_y)]
+        # Draw the arrowhead touching the left edge of the output rectangle
+        arrow_head = [(end_x + 50, end_y - 30), (end_x + 50, end_y + 30), (end_x + 90, end_y)]
         draw.polygon(arrow_head, fill=line_color)
 
     return pil2tensor(image)
@@ -139,7 +148,7 @@ class Image3SwitcherNode:
     RETURN_TYPES = ("IMAGE", "IMAGE")
     RETURN_NAMES = ("Selected Image", "Connection Diagram")
     FUNCTION = "select_image"
-    CATEGORY = "🐯 YFG\Switchers"
+    CATEGORY = "🐯 YFG/Switchers"
 
     def select_image(self, **inputs):
         image1 = inputs.get("Image 1", None)
@@ -255,4 +264,3 @@ class Image3SwitcherNode:
                 metadata.add_text(x, json.dumps(extra_pnginfo[x]))
         image.save(file_path, pnginfo=metadata, compress_level=self.compress_level)
         return file_path
-
