@@ -68,7 +68,7 @@ def generate_routing_diagram(selected_input):
         draw.line([(0, 511 - y), (1024, 511 - y)], fill=(r, g, b))
         draw.line([(0, 512 + y), (1024, 512 + y)], fill=(r, g, b))
 
-    # Draw input labels
+    # Draw input labels and circles
     for i, label in enumerate(input_labels):
         text_bbox = draw.textbbox((0, 0), label, font=font)
         text_width = text_bbox[2] - text_bbox[0]
@@ -76,40 +76,51 @@ def generate_routing_diagram(selected_input):
         rect_bbox = (10, input_y_positions[i] - text_height // 2 - padding, 10 + text_width + 2 * padding, input_y_positions[i] + text_height // 2 + padding)
         draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
         draw.text((10 + padding, input_y_positions[i] - text_height // 2), label, fill="#404040", font=font)
+        # Draw circle on the right edge of the input rectangle
+        circle_x = 10 + text_width + 2 * padding
+        circle_y = input_y_positions[i]
+        draw.ellipse((circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20), fill="#7f0000")
 
-    # Draw output label
+    # Draw output label and circle
     text_bbox = draw.textbbox((0, 0), output_label, font=font)
     text_width = text_bbox[2] - text_bbox[0]
     text_height = text_bbox[3] - text_bbox[1]
     rect_bbox = (1024 - 10 - text_width - 2 * padding, output_y_position - text_height // 2 - padding, 1024 - 10, output_y_position + text_height // 2 + padding)
     draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
     draw.text((1024 - 10 - text_width - padding, output_y_position - text_height // 2), output_label, fill="#404040", font=font)
+    # Draw circle on the left edge of the output rectangle
+    circle_x = 1024 - 10 - text_width - 2 * padding
+    circle_y = output_y_position
+    draw.ellipse((circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20), fill="#7f0000")
 
     if selected_input in input_labels:
         input_index = input_labels.index(selected_input)
         input_position = input_y_positions[input_index]
 
         # Calculate positions for the line
-        start_x = 10 + text_width + 2 * padding + 20  # Adjust to center circle on right edge of rectangle
+        start_x = 10 + text_width + 2 * padding + 20  # Center of the input circle
         start_y = input_position
-        end_x = 1024 - 10 - text_width - 2 * padding - 50  # Adjust to make arrowhead touch the left edge of the output rectangle
+        end_x = 1024 - 10 - text_width - 2 * padding - 20  # Center of the output circle
         end_y = output_y_position
 
         # Draw line and arrowhead
         line_color = "#7f0000"
         line_width = 20
+        arrow_head_length = 20
 
-        # Draw the horizontal part from input
-        draw.line([(start_x, start_y), (start_x + 50, start_y)], fill=line_color, width=line_width, joint="curve")
-        # Draw the horizontal part to output
-        draw.line([(end_x, end_y), (end_x + 50, end_y)], fill=line_color, width=line_width, joint="curve")
-        # Draw the main line with curved joints
-        draw.line([(start_x + 50, start_y), (end_x, end_y)], fill=line_color, width=line_width, joint="curve")
+        # Draw the line in a single pass
+        line_points = [
+            (start_x, start_y), 
+            (start_x + 75, start_y), 
+            (end_x - 75 - arrow_head_length, end_y),  # Ending 75px before the arrowhead
+            (end_x - arrow_head_length, end_y)  # End at the back of the arrowhead
+        ]
+        draw.line(line_points, width=line_width, fill=line_color, joint="curve")
 
         # Draw the circle centered on the right edge of the input rectangle
         draw.ellipse((start_x - 20, start_y - 20, start_x + 20, start_y + 20), fill=line_color)
         # Draw the arrowhead touching the left edge of the output rectangle
-        arrow_head = [(end_x + 50, end_y - 30), (end_x + 50, end_y + 30), (end_x + 90, end_y)]
+        arrow_head = [(end_x - arrow_head_length, end_y - 20), (end_x - arrow_head_length, end_y + 20), (end_x, end_y)]
         draw.polygon(arrow_head, fill=line_color)
 
     return pil2tensor(image)
@@ -131,7 +142,7 @@ class Image3SwitcherNode:
                 "font_file": ("STRING", {"default": "micross.ttf"}),
                 "image_label": ("BOOLEAN", {"default": True}),
                 "preview": ("BOOLEAN", {"default": True}),
-                "preview_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),  # Renamed input choice
+                "preview_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),
             },
             "optional": {
                 "Image 1": ("IMAGE",),
