@@ -53,7 +53,7 @@ def generate_routing_diagram(selected_input):
 
     input_labels = ["Image 1", "Image 2", "Image 3"]
     output_label = "Output"
-
+    
     input_y_positions = [256, 512, 768]
     output_y_position = 512
 
@@ -122,7 +122,7 @@ class Image3SwitcherNode:
                 "font_file": ("STRING", {"default": "micross.ttf"}),
                 "image_label": ("BOOLEAN", {"default": True}),
                 "preview": ("BOOLEAN", {"default": True}),
-                "output_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),  # New input choice
+                "preview_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),  # Renamed input choice
             },
             "optional": {
                 "Image 1": ("IMAGE",),
@@ -136,8 +136,8 @@ class Image3SwitcherNode:
         }
 
     OUTPUT_NODE = True
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("Selected Image",)
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("Selected Image", "Connection Diagram")
     FUNCTION = "select_image"
     CATEGORY = "🐯 YFG"
 
@@ -155,7 +155,7 @@ class Image3SwitcherNode:
             image3 = generate_placeholder_image(3)
 
         selected_image = inputs["selected_image"]
-        output_type = inputs["output_type"]
+        preview_type = inputs["preview_type"]
         font_size = inputs["font_size"]
         font_color = inputs["font_color"]
         font_file = inputs["font_file"]
@@ -164,37 +164,40 @@ class Image3SwitcherNode:
         prompt = inputs.get("prompt")
         extra_pnginfo = inputs.get("extra_pnginfo")
 
-        if output_type == "Input Image":
-            if selected_image == "Image 1":
-                selected_pil_image = tensor2pil(image1)
-                selected_tensor = image1
-                label = "Image 1"
-            elif selected_image == "Image 2":
-                selected_pil_image = tensor2pil(image2)
-                selected_tensor = image2
-                label = "Image 2"
-            else:
-                selected_pil_image = tensor2pil(image3)
-                selected_tensor = image3
-                label = "Image 3"
+        if selected_image == "Image 1":
+            selected_pil_image = tensor2pil(image1)
+            selected_tensor = image1
+            label = "Image 1"
+        elif selected_image == "Image 2":
+            selected_pil_image = tensor2pil(image2)
+            selected_tensor = image2
+            label = "Image 2"
         else:
-            selected_tensor = generate_routing_diagram(selected_image)
-            selected_pil_image = tensor2pil(selected_tensor)
-            label = "Connection Diagram"
+            selected_pil_image = tensor2pil(image3)
+            selected_tensor = image3
+            label = "Image 3"
 
-        if preview and image_label and output_type == "Input Image":
+        connection_diagram_tensor = generate_routing_diagram(selected_image)
+        connection_diagram_pil = tensor2pil(connection_diagram_tensor)
+
+        if preview and image_label and preview_type == "Input Image":
             self.add_label(selected_pil_image, label, font_file, font_size, font_color)
 
+        if preview_type == "Connection Diagram":
+            preview_pil_image = connection_diagram_pil
+        else:
+            preview_pil_image = selected_pil_image
+
         if not preview:
-            return (selected_tensor,)
+            return (selected_tensor, connection_diagram_tensor)
 
         ui_images = []
-        selected_image_filename = self.save_image(selected_pil_image, "selected_image.png", prompt, extra_pnginfo)
-        ui_images.append({"filename": selected_image_filename, "type": self.type, "subfolder": self.output_dir})
+        preview_image_filename = self.save_image(preview_pil_image, "preview_image.png", prompt, extra_pnginfo)
+        ui_images.append({"filename": preview_image_filename, "type": self.type, "subfolder": self.output_dir})
 
         return {
             "ui": {"images": ui_images},
-            "result": (selected_tensor,),
+            "result": (selected_tensor, connection_diagram_tensor),
         }
 
     def add_label(self, image, label, font_file, font_size, font_color):
@@ -253,6 +256,3 @@ class Image3SwitcherNode:
         image.save(file_path, pnginfo=metadata, compress_level=self.compress_level)
         return file_path
 
-# Define the node class mappings
-NODE_CLASS_MAPPINGS = {"Image3SwitcherNode": Image3SwitcherNode}
-NODE_DISPLAY_NAME_MAPPINGS = {"Image3SwitcherNode": "🐯 YFG Image 3 Switcher"}
