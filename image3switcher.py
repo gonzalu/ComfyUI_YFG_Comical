@@ -38,6 +38,73 @@ def generate_placeholder_image(input_number):
     
     return pil2tensor(image)
 
+def draw_rounded_rectangle(draw, bbox, radius, fill):
+    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=None)
+
+def generate_routing_diagram(selected_input):
+    image = Image.new("RGB", (1024, 1024), (255, 255, 255))  # White background
+    draw = ImageDraw.Draw(image)
+    font_size = 50
+    padding = 20
+    try:
+        font = ImageFont.truetype("arialbd.ttf", font_size)  # Heavy narrow display font (Arial Bold as a substitute)
+    except IOError:
+        font = ImageFont.load_default()
+
+    input_labels = ["Image 1", "Image 2", "Image 3"]
+    output_label = "Output"
+
+    input_y_positions = [256, 512, 768]
+    output_y_position = 512
+
+    # Drawing background gradient
+    top_color = (220, 255, 220)  # #dcffdc
+    bottom_color = (230, 255, 230)  # #e6ffe6
+    for y in range(512):
+        ratio = y / 512
+        r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
+        g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
+        b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
+        draw.line([(0, 511 - y), (1024, 511 - y)], fill=(r, g, b))
+        draw.line([(0, 512 + y), (1024, 512 + y)], fill=(r, g, b))
+
+    # Draw input labels
+    for i, label in enumerate(input_labels):
+        text_bbox = draw.textbbox((0, 0), label, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        rect_bbox = (10, input_y_positions[i] - text_height // 2 - padding, 10 + text_width + 2 * padding, input_y_positions[i] + text_height // 2 + padding)
+        draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
+        draw.text((10 + padding, input_y_positions[i] - text_height // 2), label, fill="#404040", font=font)
+
+    # Draw output label
+    text_bbox = draw.textbbox((0, 0), output_label, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
+    rect_bbox = (1024 - 10 - text_width - 2 * padding, output_y_position - text_height // 2 - padding, 1024 - 10, output_y_position + text_height // 2 + padding)
+    draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
+    draw.text((1024 - 10 - text_width - padding, output_y_position - text_height // 2), output_label, fill="#404040", font=font)
+
+    if selected_input in input_labels:
+        input_index = input_labels.index(selected_input)
+        input_position = input_y_positions[input_index]
+
+        # Calculate positions for the line
+        start_x = 10 + text_width + 2 * padding + 20  # Move circle to the right
+        start_y = input_position
+        end_x = 1024 - 10 - text_width - 2 * padding - 40  # Move arrowhead to touch the left edge of the right rectangle
+        end_y = output_y_position
+
+        # Draw line and arrowhead
+        line_color = "#7f0000"
+        line_width = 20
+        draw.line([(start_x, start_y), (512, start_y), (512, end_y), (end_x, end_y)], fill=line_color, width=line_width, joint="curve")
+        draw.ellipse((start_x - 20, start_y - 20, start_x + 20, start_y + 20), fill=line_color)
+        arrow_head = [(end_x, end_y - 30), (end_x, end_y + 30), (end_x + 40, end_y)]
+        draw.polygon(arrow_head, fill=line_color)
+
+    return pil2tensor(image)
+
 class Image3SwitcherNode:
     def __init__(self):
         self.output_dir = folder_paths.get_temp_directory()
@@ -55,6 +122,7 @@ class Image3SwitcherNode:
                 "font_file": ("STRING", {"default": "micross.ttf"}),
                 "image_label": ("BOOLEAN", {"default": True}),
                 "preview": ("BOOLEAN", {"default": True}),
+                "output_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),  # New input choice
             },
             "optional": {
                 "Image 1": ("IMAGE",),
@@ -87,6 +155,7 @@ class Image3SwitcherNode:
             image3 = generate_placeholder_image(3)
 
         selected_image = inputs["selected_image"]
+        output_type = inputs["output_type"]
         font_size = inputs["font_size"]
         font_color = inputs["font_color"]
         font_file = inputs["font_file"]
@@ -95,20 +164,25 @@ class Image3SwitcherNode:
         prompt = inputs.get("prompt")
         extra_pnginfo = inputs.get("extra_pnginfo")
 
-        if selected_image == "Image 1":
-            selected_pil_image = tensor2pil(image1)
-            selected_tensor = image1
-            label = "Image 1"
-        elif selected_image == "Image 2":
-            selected_pil_image = tensor2pil(image2)
-            selected_tensor = image2
-            label = "Image 2"
+        if output_type == "Input Image":
+            if selected_image == "Image 1":
+                selected_pil_image = tensor2pil(image1)
+                selected_tensor = image1
+                label = "Image 1"
+            elif selected_image == "Image 2":
+                selected_pil_image = tensor2pil(image2)
+                selected_tensor = image2
+                label = "Image 2"
+            else:
+                selected_pil_image = tensor2pil(image3)
+                selected_tensor = image3
+                label = "Image 3"
         else:
-            selected_pil_image = tensor2pil(image3)
-            selected_tensor = image3
-            label = "Image 3"
+            selected_tensor = generate_routing_diagram(selected_image)
+            selected_pil_image = tensor2pil(selected_tensor)
+            label = "Connection Diagram"
 
-        if preview and image_label:
+        if preview and image_label and output_type == "Input Image":
             self.add_label(selected_pil_image, label, font_file, font_size, font_color)
 
         if not preview:
@@ -178,3 +252,7 @@ class Image3SwitcherNode:
                 metadata.add_text(x, json.dumps(extra_pnginfo[x]))
         image.save(file_path, pnginfo=metadata, compress_level=self.compress_level)
         return file_path
+
+# Define the node class mappings
+NODE_CLASS_MAPPINGS = {"Image3SwitcherNode": Image3SwitcherNode}
+NODE_DISPLAY_NAME_MAPPINGS = {"Image3SwitcherNode": "🐯 YFG Image 3 Switcher"}
