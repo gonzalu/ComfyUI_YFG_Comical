@@ -1,10 +1,3 @@
-"""
-@author: YFG
-@title: YFG Image 3 Switcher
-@nickname: 🐯 YFG Image 3 Switcher
-@description: This node allows the user to select between three images and outputs the selected image.
-"""
-
 import folder_paths
 import torch
 import numpy as np
@@ -26,7 +19,7 @@ def generate_placeholder_image(input_number):
     draw = ImageDraw.Draw(image)
     font_size = 50
     try:
-        font = ImageFont.truetype("arialbd.ttf", font_size)  # Heavy narrow display font (Arial Bold as a substitute)
+        font = ImageFont.truetype("seguisb.ttf", font_size)  # Arial font
     except IOError:
         font = ImageFont.load_default()
 
@@ -39,74 +32,92 @@ def generate_placeholder_image(input_number):
     return pil2tensor(image)
 
 def draw_rounded_rectangle(draw, bbox, radius, fill):
-    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=None)
+    draw.rounded_rectangle(bbox, radius=3, fill=fill, outline=None)
 
-def generate_routing_diagram(selected_input):
-    image = Image.new("RGB", (1024, 1024), (255, 255, 255))  # White background
+def generate_routing_diagram(selected_input, num_inputs):
+    rect_height = 60  # Height for each input rectangle
+    padding = 20  # Padding between rectangles
+    diagram_height = num_inputs * (rect_height + padding) + padding  # Total height of the diagram
+    image = Image.new("RGB", (1024, diagram_height), (255, 255, 255))  # Dynamic height based on inputs
     draw = ImageDraw.Draw(image)
-    font_size = 50
-    padding = 20
+    font_size = 30  # Adjusted font size to small
+    circle_radius = 8  # Reduced size of circles
     try:
-        font = ImageFont.truetype("arialbd.ttf", font_size)  # Heavy narrow display font (Arial Bold as a substitute)
+        font = ImageFont.truetype("seguisb.ttf", font_size)  # Arial font
     except IOError:
         font = ImageFont.load_default()
 
-    input_labels = ["Image 1", "Image 2", "Image 3"]
+    input_labels = [f"Image {i+1}" for i in range(num_inputs)]
     output_label = "Output"
     
-    input_y_positions = [256, 512, 768]
-    output_y_position = 512
+    # Calculate the width and height for the rectangles based on the largest label "Image 20"
+    max_label = "Image 20"
+    text_bbox = draw.textbbox((0, 0), max_label, font=font)
+    max_text_width = text_bbox[2] - text_bbox[0]
+    max_text_height = text_bbox[3] - text_bbox[1]
+    rect_width = max_text_width + 2 * padding
+
+    input_y_positions = [padding + i * (rect_height + padding) + rect_height // 2 for i in range(num_inputs)]
+    output_y_position = diagram_height // 2
 
     # Drawing background gradient
     top_color = (220, 255, 220)  # #dcffdc
     bottom_color = (230, 255, 230)  # #e6ffe6
-    for y in range(512):
-        ratio = y / 512
+    for y in range(diagram_height // 2):
+        ratio = y / (diagram_height // 2)
         r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
         g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
-        draw.line([(0, 511 - y), (1024, 511 - y)], fill=(r, g, b))
-        draw.line([(0, 512 + y), (1024, 512 + y)], fill=(r, g, b))
+        draw.line([(0, (diagram_height // 2) - y), (1024, (diagram_height // 2) - y)], fill=(r, g, b))
+        draw.line([(0, (diagram_height // 2) + y), (1024, (diagram_height // 2) + y)], fill=(r, g, b))
 
     # Draw input labels and circles
     for i, label in enumerate(input_labels):
-        text_bbox = draw.textbbox((0, 0), label, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
-        rect_bbox = (10, input_y_positions[i] - text_height // 2 - padding, 10 + text_width + 2 * padding, input_y_positions[i] + text_height // 2 + padding)
+        rect_bbox = (10, input_y_positions[i] - rect_height // 2, 10 + rect_width, input_y_positions[i] + rect_height // 2)
         draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
-        draw.text((10 + padding, input_y_positions[i] - text_height // 2), label, fill="#404040", font=font)
+        
+        # Center the text vertically
+        text_bbox = draw.textbbox((0, 0), label, font=font)
+        text_height = text_bbox[3] - text_bbox[1]
+        ascent, descent = font.getmetrics()
+        text_position = (20, input_y_positions[i] - (text_height + descent) // 2)
+        draw.text(text_position, label, fill="#404040", font=font)
+        
         # Draw circle on the right edge of the input rectangle
-        circle_x = 10 + text_width + 2 * padding
+        circle_x = 10 + rect_width
         circle_y = input_y_positions[i]
-        draw.ellipse((circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20), fill="#7f0000")
+        draw.ellipse((circle_x - circle_radius, circle_y - circle_radius, circle_x + circle_radius, circle_y + circle_radius), fill="#7f0000")
 
     # Draw output label and circle
-    text_bbox = draw.textbbox((0, 0), output_label, font=font)
-    text_width = text_bbox[2] - text_bbox[0]
-    text_height = text_bbox[3] - text_bbox[1]
-    rect_bbox = (1024 - 10 - text_width - 2 * padding, output_y_position - text_height // 2 - padding, 1024 - 10, output_y_position + text_height // 2 + padding)
+    rect_bbox = (1024 - 10 - rect_width, output_y_position - rect_height // 2, 1024 - 10, output_y_position + rect_height // 2)
     draw_rounded_rectangle(draw, rect_bbox, 10, "#afebff")
-    draw.text((1024 - 10 - text_width - padding, output_y_position - text_height // 2), output_label, fill="#404040", font=font)
+    
+    # Center the text vertically
+    text_bbox = draw.textbbox((0, 0), output_label, font=font)
+    text_height = text_bbox[3] - text_bbox[1]
+    ascent, descent = font.getmetrics()
+    text_position = (1024 - 10 - padding - max_text_width, output_y_position - (text_height + descent) // 2)
+    draw.text(text_position, output_label, fill="#404040", font=font)
+    
     # Draw circle on the left edge of the output rectangle
-    circle_x = 1024 - 10 - text_width - 2 * padding
+    circle_x = 1024 - 10 - rect_width
     circle_y = output_y_position
-    draw.ellipse((circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20), fill="#7f0000")
+    draw.ellipse((circle_x - circle_radius, circle_y - circle_radius, circle_x + circle_radius, circle_y + circle_radius), fill="#7f0000")
 
     if selected_input in input_labels:
         input_index = input_labels.index(selected_input)
         input_position = input_y_positions[input_index]
 
         # Calculate positions for the line
-        start_x = 10 + text_width + 2 * padding + 20  # Center of the input circle
+        start_x = 10 + rect_width  # Edge of the input rectangle
         start_y = input_position
-        end_x = 1024 - 10 - text_width - 2 * padding - 20  # Center of the output circle
+        end_x = 1024 - 10 - rect_width  # Edge of the output rectangle
         end_y = output_y_position
 
         # Draw line and arrowhead
         line_color = "#7f0000"
-        line_width = 20
-        arrow_head_length = 20
+        line_width = 10
+        arrow_head_length = 25
 
         # Draw the line in a single pass
         line_points = [
@@ -117,62 +128,50 @@ def generate_routing_diagram(selected_input):
         ]
         draw.line(line_points, width=line_width, fill=line_color, joint="curve")
 
-        # Draw the circle centered on the right edge of the input rectangle
-        draw.ellipse((start_x - 20, start_y - 20, start_x + 20, start_y + 20), fill=line_color)
         # Draw the arrowhead touching the left edge of the output rectangle
-        arrow_head = [(end_x - arrow_head_length, end_y - 20), (end_x - arrow_head_length, end_y + 20), (end_x, end_y)]
+        arrow_head = [(end_x - arrow_head_length, end_y - circle_radius), (end_x - arrow_head_length, end_y + circle_radius), (end_x, end_y)]
         draw.polygon(arrow_head, fill=line_color)
 
     return pil2tensor(image)
 
-class Image3SwitcherNode:
-    def __init__(self):
+class BaseImageSwitcherNode:
+    OUTPUT_NODE = True
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("Selected Image", "Connection Diagram")
+    CATEGORY = "🐯 YFG/Switchers"
+    FUNCTION = "select_image"
+
+    def __init__(self, num_inputs):
         self.output_dir = folder_paths.get_temp_directory()
         self.type = "temp"
         self.prefix_append = "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for _ in range(5))
         self.compress_level = 1
+        self.num_inputs = num_inputs
 
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls, num_inputs):
         return {
             "required": {
-                "selected_image": (["Image 1", "Image 2", "Image 3"], {"default": "Image 1"}),
+                "selected_image": ([f"Image {i+1}" for i in range(num_inputs)], {"default": "Image 1"}),
                 "font_size": (["Small", "Medium", "Large"], {"default": "Medium"}),
                 "font_color": (["White", "Black", "Red", "Green", "Blue", "Yellow", "Brown", "Orange"], {"default": "White"}),
-                "font_file": ("STRING", {"default": "micross.ttf"}),
+                "font_file": ("STRING", {"default": "seguisb.ttf"}),  # Arial font
                 "image_label": ("BOOLEAN", {"default": True}),
                 "preview": ("BOOLEAN", {"default": True}),
                 "preview_type": (["Input Image", "Connection Diagram"], {"default": "Input Image"}),
             },
-            "optional": {
-                "Image 1": ("IMAGE",),
-                "Image 2": ("IMAGE",),
-                "Image 3": ("IMAGE",),
-            },
+            "optional": {f"Image {i+1}": ("IMAGE",) for i in range(num_inputs)},
             "hidden": {
                 "prompt": "PROMPT",
                 "extra_pnginfo": "EXTRA_PNGINFO"
             },
         }
 
-    OUTPUT_NODE = True
-    RETURN_TYPES = ("IMAGE", "IMAGE")
-    RETURN_NAMES = ("Selected Image", "Connection Diagram")
-    FUNCTION = "select_image"
-    CATEGORY = "🐯 YFG/Switchers"
-
     def select_image(self, **inputs):
-        image1 = inputs.get("Image 1", None)
-        if image1 is None:
-            image1 = generate_placeholder_image(1)
-
-        image2 = inputs.get("Image 2", None)
-        if image2 is None:
-            image2 = generate_placeholder_image(2)
-
-        image3 = inputs.get("Image 3", None)
-        if image3 is None:
-            image3 = generate_placeholder_image(3)
+        images = [inputs.get(f"Image {i+1}", None) for i in range(self.num_inputs)]
+        for i, img in enumerate(images):
+            if img is None:
+                images[i] = generate_placeholder_image(i+1)
 
         selected_image = inputs["selected_image"]
         preview_type = inputs["preview_type"]
@@ -184,20 +183,12 @@ class Image3SwitcherNode:
         prompt = inputs.get("prompt")
         extra_pnginfo = inputs.get("extra_pnginfo")
 
-        if selected_image == "Image 1":
-            selected_pil_image = tensor2pil(image1)
-            selected_tensor = image1
-            label = "Image 1"
-        elif selected_image == "Image 2":
-            selected_pil_image = tensor2pil(image2)
-            selected_tensor = image2
-            label = "Image 2"
-        else:
-            selected_pil_image = tensor2pil(image3)
-            selected_tensor = image3
-            label = "Image 3"
+        selected_index = int(selected_image.split()[1]) - 1
+        selected_pil_image = tensor2pil(images[selected_index])
+        selected_tensor = images[selected_index]
+        label = selected_image
 
-        connection_diagram_tensor = generate_routing_diagram(selected_image)
+        connection_diagram_tensor = generate_routing_diagram(selected_image, self.num_inputs)
         connection_diagram_pil = tensor2pil(connection_diagram_tensor)
 
         if preview and image_label and preview_type == "Input Image":
@@ -275,3 +266,43 @@ class Image3SwitcherNode:
                 metadata.add_text(x, json.dumps(extra_pnginfo[x]))
         image.save(file_path, pnginfo=metadata, compress_level=self.compress_level)
         return file_path
+
+class Image3SwitcherNode(BaseImageSwitcherNode):
+    def __init__(self):
+        super().__init__(num_inputs=3)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return super().INPUT_TYPES(3)
+
+class Image5SwitcherNode(BaseImageSwitcherNode):
+    def __init__(self):
+        super().__init__(num_inputs=5)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return super().INPUT_TYPES(5)
+
+class Image10SwitcherNode(BaseImageSwitcherNode):
+    def __init__(self):
+        super().__init__(num_inputs=10)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return super().INPUT_TYPES(10)
+
+class Image15SwitcherNode(BaseImageSwitcherNode):
+    def __init__(self):
+        super().__init__(num_inputs=15)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return super().INPUT_TYPES(15)
+
+class Image20SwitcherNode(BaseImageSwitcherNode):
+    def __init__(self):
+        super().__init__(num_inputs=20)
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return super().INPUT_TYPES(20)
