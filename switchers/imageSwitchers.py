@@ -138,7 +138,7 @@ class BaseImageSwitcherNode:
     OUTPUT_NODE = True
     RETURN_TYPES = ("IMAGE", "IMAGE")
     RETURN_NAMES = ("Selected Image", "Connection Diagram")
-    CATEGORY = "🐯 YFG/Switchers"
+    CATEGORY = "🐯 YFG/🔀 Switchers"
     FUNCTION = "select_image"
 
     def __init__(self, num_inputs):
