@@ -36,7 +36,7 @@ class Image2ImgBB:
     RETURN_TYPES = ("IMAGE", "MASK", "STRING", "STRING")
     RETURN_NAMES = ("IMAGE", "MASK", "Image URL", "API Response")
     FUNCTION = "process_image"
-    CATEGORY = "🐯 YFG/Loaders"
+    CATEGORY = "🐯 YFG/🔄 Loaders"
     FRIENDLY_NAME = "Image to imgBB"
 
     def process_image(self, image, upload_to_imgbb, **kwargs):

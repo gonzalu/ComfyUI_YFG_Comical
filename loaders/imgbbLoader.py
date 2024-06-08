@@ -156,7 +156,7 @@ class ImgbbLoader:
     RETURN_TYPES = ("IMAGE", "MASK", "BOOLEAN")
     OUTPUT_IS_LIST = (True, True, False)
     RETURN_NAMES = ("images", "masks", "has_image")
-    CATEGORY = "🐯 YFG/Loaders"
+    CATEGORY = "🐯 YFG/🔄 Loaders"
     FUNCTION = "load_image_from_url"
 
     def load_image_from_url(self, url="", keep_alpha_channel=False, output_mode=False, **kwargs):

@@ -25,7 +25,7 @@ class SmartCheckpointLoader:
 
     RETURN_TYPES = ("MODEL", "CLIP", "VAE")
     FUNCTION = "load_checkpoint"
-    CATEGORY = "🐯 YFG"
+    CATEGORY = "🐯 YFG/🔄 Loaders"
 
     def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
         # Get the full path from the mapping
