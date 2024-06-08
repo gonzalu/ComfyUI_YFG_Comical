@@ -73,6 +73,10 @@ a different directory structure than other users. Makes organizing checkpoints a
 
 The workflow should be embedded in the file. If you can't get it to load, feel free to download and open the [workflow.json](workflows/ComfyUI_YFG_Comical-Example-Workflow.json) file.
 
+## All nodes as of 06-08-2024
+
+(img/allnodes06082024.png)
+
 ## Acknowledgements
 
 I have to give credit to at least those who's other custom nodes I use quite often and in some cases make my life in ComfyUI all around better.

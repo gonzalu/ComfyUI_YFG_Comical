@@ -231,7 +231,7 @@ class storeURL:
     OUTPUT_NODE = True
     OUTPUT_IS_LIST = (True,)
 
-    CATEGORY = "🐯 YFG/Loaders"
+    CATEGORY = "🐯 YFG/🔄 Loaders"
 
     def getURL(self, text, unique_id=None, extra_pnginfo=None):
         if unique_id is not None and extra_pnginfo is not None:

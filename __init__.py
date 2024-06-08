@@ -19,6 +19,7 @@ NODE_CLASS_MAPPINGS = {
     "Image15SwitcherNode": Image15SwitcherNode,
     "Image20SwitcherNode": Image20SwitcherNode,
     "image_to_base64_node": ImageToBase64Node,
+    "image2imbgg_node": Image2ImgBB,    
     "imgbbLoader_node": ImgbbLoader,
     "storeURL_node": storeURL,
     "smart_checkpoint_loader": SmartCheckpointLoader,
