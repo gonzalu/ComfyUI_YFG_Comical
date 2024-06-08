@@ -51,8 +51,8 @@ Perfvect for sharing workflows while making original images available for others
 
 #### Setup
 
-In order to use these nodes, you must have an account with imgBB service. Once you have your account, navigate to <a target="_blank" href="https://api.imgbb.com/">https://api.imgbb.com/</a> and generate an API key. You will need to configure this key in the *imgbb_api_key.json* file in the nodes subfolder `./loaders/`. 
-There is a sample file *imgbb_api_key_example.json* you can copy and rename to *imgbb_api_key.json*, edit it and enter your API key replacing the text `"YOUR_API_KEY_HERE"` with your key. See example below.  
+In order to use these nodes, you must have an account with imgBB service. Once you have your account, navigate to <a target="_blank" href="https://api.imgbb.com/">`https://api.imgbb.com/`</a> and generate an API key. You will need to configure this key in the `*imgbb_api_key.json*` file in the nodes subfolder `./loaders/`. 
+There is a sample file `*imgbb_api_key_example.json*` you can copy and rename to `*imgbb_api_key.json*`, edit it and enter your API key replacing the text `"YOUR_API_KEY_HERE"` with your key. See example below.  
 
 >     {
 >       "api_key": "8a54a1b12353d43105d62fxadr3286a3323x"
