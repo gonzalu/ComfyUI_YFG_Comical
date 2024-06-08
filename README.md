@@ -75,7 +75,7 @@ The workflow should be embedded in the file. If you can't get it to load, feel f
 
 ## All nodes as of 06-08-2024
 
-(img/allnodes06082024.png)
+![All Nodes](img/allnodes06082024.png)
 
 ## Acknowledgements
 
