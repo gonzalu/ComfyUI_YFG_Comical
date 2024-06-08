@@ -42,6 +42,29 @@ Here is an example of the images Side by Side instead of split.
 
 ![Image Side-by-Side Generator](img/images2sidebyside.png)
 
+### Image to imgBB
+
+![Image to imgBB](img/image2imgbb.png)
+
+These nodes enable uploading and downloading to / from the [imgBB](https://www.imgbb.com/) image sharing service. Also included are nodes for downloading images from imgBB and an image URL node that preserves the uploaded image URL in the workflow for easy sharing of originals with others. 
+Perfvect for sharing workflows while making original images available for others. 
+
+#### Setup
+
+In order to use these nodes, you must have an account with imgBB service. Once you have your account, navigate to (https://api.imgbb.com/) and generate an API key. You will need to configure this key in the [imgbb_api_key.json] file in the nodes folder (./loaders/) folder. 
+There is a sample file [imgbb_api_key_example.json] you can copy and rename to [imgbb_api_key.json], edit it and enter your API key replacing the text "YOUR_API_KEY_HERE" with your key. See example below.  
+
+>     {
+>       "api_key": "8a54a1b12353d43105d62fxadr3286a3323x"
+>     }
+
+### Smart Checkpoint Loader
+
+![Image to imgBB](img/smartCheckpointLoader.png)
+
+This is a one-for-one replacement of the core Load Checkpoint node with one key difference: It flattens your directory structure regardless of how complex and makes all checkpoints appear as if on one folder. This is ideal for sharing workflows where the original author may have
+a different directory structure than other users. Makes organizing checkpoints and sharing workflows easier. 
+
 ## Examples
 
 ### Sample Workflow
