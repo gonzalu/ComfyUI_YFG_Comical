@@ -7,6 +7,9 @@ from .image2Base64node import ImageToBase64Node
 from .loaders.image2imgbb import Image2ImgBB
 from .loaders.imgbbLoader import *
 from .loaders.smartcheckpointloader import SmartCheckpointLoader
+from .image2contrastmask import ImageToContrastMask
+from .VAEDecodePreview import VAEDecodePreview
+from .MonoClip import MonoClip
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -23,6 +26,9 @@ NODE_CLASS_MAPPINGS = {
     "imgbbLoader_node": ImgbbLoader,
     "storeURL_node": storeURL,
     "smart_checkpoint_loader": SmartCheckpointLoader,
+    "image2contrastMask_node": ImageToContrastMask,
+    "VAEDecodePreview_node": VAEDecodePreview,
+    "MonoClip_node": MonoClip,    
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -40,5 +46,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "imgbbLoader_node": "\ud83d\udc2f YFG imgBB to Image",
     "storeURL_node": "\ud83d\udc2f YFG Store URL",    
     "smart_checkpoint_loader": "\ud83d\udc2f YFG Smart Checkpoint Loader",
+    "image2contrastMask_node": "\ud83d\udc2f YFG Image To Contrast Mask",
+    "VAEDecodePreview_node": "\ud83d\udc2f YFG VAE Decode with Preview",
+    "MonoClip_node": "\ud83d\udc2f YFG Monochrome Image Clip",
 }
 print(f"\033[1;32m[YFG Comical]: 🐯 \033[93m\033[3m Loaded {len(NODE_CLASS_MAPPINGS)} nodes.\033[0m 🐯")

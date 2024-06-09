@@ -65,6 +65,30 @@ There is a sample file `imgbb_api_key_example.json` you can copy and rename to `
 This is a one-for-one replacement of the core Load Checkpoint node with one key difference: It flattens your directory structure regardless of how complex and makes all checkpoints appear as if on one folder. This is ideal for sharing workflows where the original author may have
 a different directory structure than other users. Makes organizing checkpoints and sharing workflows easier. 
 
+### Mono Clip
+
+![Mono Clip](img/MonoClip.png)
+
+Generates a black and white or greyscale clipped image. Choice of three options with reverse mode for each. Suitable for masking and special effects. 
+
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=29755 *
+
+### VAE  Decode with Preview
+
+![VAE Decode w/ Preview](img/VAEDecodePreview.png)
+
+Generates a black and white or greyscale clipped image. Choice of three options with reverse mode for each. Suitable for masking and special effects. 
+
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=47776 *
+
+### Image to Contrast Mask
+
+![Image to Contrast Mark](img/image2contrastmask.png)
+
+Generates a greyscale contrast mask. Threshold is selectable between 1 and 255 for low and high values. Optionally blur the output. 
+
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=32717 *
+
 ## Examples
 
 ### Sample Workflow
