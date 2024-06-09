@@ -71,7 +71,7 @@ a different directory structure than other users. Makes organizing checkpoints a
 
 Generates a black and white or greyscale clipped image. Choice of three options with reverse mode for each. Suitable for masking and special effects. 
 
-*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=29755 *
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=29755*
 
 ### VAE  Decode with Preview
 
@@ -79,7 +79,7 @@ Generates a black and white or greyscale clipped image. Choice of three options 
 
 Generates a black and white or greyscale clipped image. Choice of three options with reverse mode for each. Suitable for masking and special effects. 
 
-*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=47776 *
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=47776*
 
 ### Image to Contrast Mask
 
@@ -87,7 +87,7 @@ Generates a black and white or greyscale clipped image. Choice of three options 
 
 Generates a greyscale contrast mask. Threshold is selectable between 1 and 255 for low and high values. Optionally blur the output. 
 
-*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=32717 *
+*This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=32717*
 
 ### PixelArt
 
@@ -95,7 +95,7 @@ Generates a greyscale contrast mask. Threshold is selectable between 1 and 255 f
 
 Generates a Pixel Art style image. Optionally select the interpolation mode and number of pixels. 
 
-*This node is based on original Mosaic code by XSS https://civitai.com/models/24869?modelVersionId=29750 *
+*This node is based on original Mosaic code by XSS https://civitai.com/models/24869?modelVersionId=29750*
 
 ## Examples
 
