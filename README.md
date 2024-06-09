@@ -89,6 +89,14 @@ Generates a greyscale contrast mask. Threshold is selectable between 1 and 255 f
 
 *This node is based on original code by XSS https://civitai.com/models/24869?modelVersionId=32717 *
 
+### PixelArt
+
+![PixelArt](img/pixelart.png)
+
+Generates a Pixel Art style image. Optionally select the interpolation mode and number of pixels. 
+
+*This node is based on original Mosaic code by XSS https://civitai.com/models/24869?modelVersionId=29750 *
+
 ## Examples
 
 ### Sample Workflow
