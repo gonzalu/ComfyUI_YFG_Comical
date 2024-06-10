@@ -30,13 +30,13 @@ This version of the node reduces the number of outputs to just two: Original and
 
 *This node is based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui*
 
-This node generates a halftone image from the input image. It can self display and send the output to other downstream nodes. You have a choice of displaying either the Original Image ort the generated Halftone image. The display can also be turned off. 
+This node generates a halftone image from the input image. It can self-display and send the output to other downstream nodes. You have a choice of displaying the Original Image or the generated Halftone image. The display can also be turned off. 
 
 ### Image Side by Side
 
 ![Image Side-by-Side Generator](img/images2sidebysidesplit.png)
 
-This node generates either a Side-by-Side image of a Split image from two input images. You can turn on node self preview or send the resulting image to other downstream nodes. The header labels can be turned off and the font, size and color can also be selected. 
+This node generates either a Side-by-Side image of a Split image from two input images. You can turn on node self-preview or send the resulting image to other downstream nodes. The header labels can be turned off and the font, size and color can also be selected. 
 
 Here is an example of the images Side by Side instead of split.
 
@@ -47,11 +47,11 @@ Here is an example of the images Side by Side instead of split.
 ![Image to imgBB](img/image2imgbb.png)
 
 These nodes enable uploading and downloading to / from the [imgBB](https://www.imgbb.com/) image sharing service. Also included are nodes for downloading images from imgBB and an image URL node that preserves the uploaded image URL in the workflow for easy sharing of originals with others. 
-Perfvect for sharing workflows while making original images available for others. 
+Perfect for sharing workflows while making original images available for others. 
 
 #### Setup
 
-In order to use these nodes, you must have an account with imgBB service. Once you have your account, navigate to [`https://api.imgbb.com/`](https://api.imgbb.com) and generate an API key. You will need to configure this key in the `imgbb_api_key.json` file in the nodes subfolder `./loaders/`. 
+In order to use these nodes, you must have an account with imgBB service. Once you have your account, navigate to [`https://api.imgbb.com/`](https://api.imgbb.com) and generate an API key. You will need to configure this key in the `imgbb_api_key.json` file in the node's subfolder `./loaders/`. 
 There is a sample file `imgbb_api_key_example.json` you can copy and rename to `imgbb_api_key.json`, edit it and enter your API key replacing the text `"YOUR_API_KEY_HERE"` with your key. See example below.  
 
 >     {
