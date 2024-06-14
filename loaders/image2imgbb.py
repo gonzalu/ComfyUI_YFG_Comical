@@ -38,6 +38,7 @@ class Image2ImgBB:
     FUNCTION = "process_image"
     CATEGORY = "🐯 YFG/🔄 Loaders"
     FRIENDLY_NAME = "Image to imgBB"
+    OUTPUT_NODE = True
 
     def process_image(self, image, upload_to_imgbb, **kwargs):
         graph_metadata = kwargs.get('graph_metadata', {})

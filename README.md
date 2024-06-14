@@ -8,7 +8,30 @@
 
 </div>
 
-A collection of ComfyUI utility custom nodes. Hope these provide some functionality not offered in the core app or other custom nodes.
+A collection of ComfyUI utility custom nodes. Hope these provide some functionality not offered in the core app or other custom nodes. Some nodes take existing nodes and add enhanced functionality and/or improved quality of life features. 
+
+- [YFG Comical ComfyUI Custom Nodes](#yfg-comical-comfyui-custom-nodes)
+  * [Nodes](#nodes)
+    + [Image Histograms Generator](#image-histograms-generator)
+    + [Image Histograms Generator (compact)](#image-histograms-generator--compact-)
+    + [Image Halftone Generator](#image-halftone-generator)
+    + [Image Side by Side](#image-side-by-side)
+    + [Image to imgBB](#image-to-imgbb)
+      - [Setup](#setup)
+    + [Smart Checkpoint Loader](#smart-checkpoint-loader)
+    + [Mono Clip](#mono-clip)
+    + [VAE  Decode with Preview](#vae--decode-with-preview)
+    + [Image to Contrast Mask](#image-to-contrast-mask)
+    + [PixelArt](#pixelart)
+    + [Text Mask Overlay](#text-mask-overlay)
+    + [Image Switchers](#image-switchers)
+  * [Examples](#examples)
+    + [Sample Workflow](#sample-workflow)
+  * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
+  * [Acknowledgements](#acknowledgements)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 ## Nodes
 
@@ -97,6 +120,41 @@ Generates a Pixel Art style image. Optionally select the interpolation mode and 
 
 *This node is based on original Mosaic code by XSS https://civitai.com/models/24869?modelVersionId=29750*
 
+### Text Mask Overlay
+
+![Text Mask Overlay](img/textmaskoverlay01a.png)
+
+This node takes the original idea by Yuigahama Yui and adds a few enhancements. 
+
+- Font Selection: You have the option of selecting from System Fonts, User fonts or local fonts in the node directory (under the folder ./fonts/ in the custom node directory) 
+- Mask-to-Image is handled in the node so no need for an external converter. 
+
+Here is a sample image output using the node. 
+
+| <a href="img/textmaskoverlay01original.png"><img src="img/textmaskoverlay01original.png" alt="Text Mask Overlay Example" width="400"/></a> | <a href="img/textmaskoverlay01.png"><img src="img/textmaskoverlay01.png" alt="Text Mask Overlay Example" width="400"/></a> |
+| :-: | :-: |
+| Original | Output |
+
+Example [workflow](workflows/ComfyUI_YFG_Comical-Text-Mask-Overlay-Workflow.json) workflow in JSON format. The workflow is also embedded to the linked image below. 
+
+[![Text Mask Overlay](img/textMaskOverlayWorkflow01.png)](workflows/ComfyUI_YFG_Comical-Text-Mask-Overlay-Workflow.png)
+
+*This node is based on the ComfyUI-Text node by Yuigahama Yui https://github.com/LZpenguin/ComfyUI-Text*
+
+### Image Switchers
+
+![switchers](img/switchers.png)
+
+Multi-input image switchers. 3, 5, 10, 15 and 20 input versions. These nodes also have a lot of additional functionality such as a matrix display showing routing and also gives the user to preview the image selected within the node. The nodes also gracefully handle missing inputs and dsiplays a warnign to the user that a particular input is empty.
+
+Why these nodes? I have some workflows where I had to gang together existing image switchers which made it cumbersome to keep track of what batch of inputs was switched to an output. 
+
+![switchers](img/switchers03.png)
+
+![switchers](img/switchers05.png)
+
+![switchers](img/switchers05b.png)
+
 ## Examples
 
 ### Sample Workflow
@@ -105,9 +163,9 @@ Generates a Pixel Art style image. Optionally select the interpolation mode and 
 
 The workflow should be embedded in the file. If you can't get it to load, feel free to download and open the [workflow.json](workflows/ComfyUI_YFG_Comical-Example-Workflow.json) file.
 
-## All nodes as of 06-08-2024
+## All nodes as of 06-13-2024
 
-![All Nodes](img/allnodes06082024.png)
+![All Nodes](img/allnodes06132024.png)
 
 ## Acknowledgements
 
