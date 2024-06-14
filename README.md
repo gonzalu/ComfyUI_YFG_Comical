@@ -122,7 +122,7 @@ Generates a Pixel Art style image. Optionally select the interpolation mode and 
 
 ### Text Mask Overlay
 
-![Text Mask Overlay](img/textmaskoverlay01a.png)
+![Text Mask Overlay](img/textMaskOverlay01a.png)
 
 This node takes the original idea by Yuigahama Yui and adds a few enhancements. 
 
@@ -131,7 +131,7 @@ This node takes the original idea by Yuigahama Yui and adds a few enhancements.
 
 Here is a sample image output using the node. 
 
-| <a href="img/textmaskoverlay01original.png"><img src="img/textmaskoverlay01original.png" alt="Text Mask Overlay Example" width="400"/></a> | <a href="img/textmaskoverlay01.png"><img src="img/textmaskoverlay01.png" alt="Text Mask Overlay Example" width="400"/></a> |
+| <a href="img/textMaskOverlay01original.png"><img src="img/textMaskOverlay01original.png" alt="Text Mask Overlay Example" width="400"/></a> | <a href="img/textMaskOverlay01.png"><img src="img/textMaskOverlay01.png" alt="Text Mask Overlay Example" width="400"/></a> |
 | :-: | :-: |
 | Original | Output |
 
