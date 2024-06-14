@@ -19,7 +19,7 @@ class TextMaskOverlay:
 
         # Default user directory to fonts
         user_directory = os.path.expandvars("%LocalAppData%\\Microsoft\\Windows\\Fonts")
-        
+
         # Define font lists for different sources
         system_fonts = cls.get_font_list("System")
         node_fonts = cls.get_font_list("Node Folder")
