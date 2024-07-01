@@ -1,7 +1,7 @@
 [project]
 name = "comfyui_yfg_comical"
 description = "Utility custom nodes for special effects, image manipulation and quality of life tools."
-version = "1.0.0"
+version = "1.0.1"
 license = "LICENSE"
 dependencies = ["transformers", "typer", "typing-extensions"]
 
