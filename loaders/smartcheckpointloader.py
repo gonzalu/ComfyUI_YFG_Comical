@@ -1,8 +1,8 @@
 """
-@creator: YFG
-@title: YFG Smart Checkpoint Loader
-@nickname: 🧠 YFG Smart Checkpoint Loader
-@description: This extension loads a model checkpoint file and extracts the model state dictionary or the entire model, treating all checkpoints as if they are in the root directory.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 import os

@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG PixelArt
-@nickname: 🐯 YFG PixelArt
-@description: This node takes an input image and generates a PixelArt Mosaic.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 ## Based on original code by XSS https://civitai.com/models/24869?modelVersionId=29750 ##

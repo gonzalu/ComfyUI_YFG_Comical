@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG Image to Contrast Mask
-@nickname: 🐯 YFG Image to Contrast Mask
-@description: This node generates a contrast mask from an input image.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 ## This node will take the provided image and combines a few of the other nodes I have to make it a single step process to make a contrast mask from it. ##

@@ -1,9 +1,10 @@
 """
-@app_author: YFG
-@app_title: YFG Image to imgBB
-@app_nickname: 🐯 YFG Image to imgBB
-@app_description: This node loads an image, optionally uploads it to imgbb, and returns the image along with the image URL and API results.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
+
 import io
 import torch
 import os

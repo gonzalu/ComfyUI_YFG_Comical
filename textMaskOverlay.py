@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: Text Mask Overlay
-@nickname: 🐱 Text Mask Overlay
-@description: This extension overlays text onto a mask using specified fonts. It allows dynamic font selection from system fonts, a specific node folder, or a user-defined directory.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 import cv2
 import numpy as np

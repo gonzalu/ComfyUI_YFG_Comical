@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG Histograms
-@nickname: 🐯 YFG Halftone
-@description: This node generates a halftone image from the input image.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 ## Based on original code by Phil Gyford https://github.com/philgyford/python-halftone and ComfyUI node by aimingfail https://civitai.com/models/143293/image2halftone-node-for-comfyui ##

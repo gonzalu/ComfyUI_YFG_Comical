@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG VAE Decode and Preview
-@nickname: 🐯 YFG VAE Decode and Preview
-@description: This node will decode the latent and preview the resulting image. You can still send the image to other downstream nodes. Great for previewing a latent without having to use a preview image node. 
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 ## Based on original code by XSS https://civitai.com/models/24869?modelVersionId=47776 ##

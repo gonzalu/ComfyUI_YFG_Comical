@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG Monochrome Image Clip
-@nickname: 🐯 YFG Monochrome Image Clip
-@description: This node takes an input image and generates various clipped greyscale images.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 
 ## Based on original code by XSS https://civitai.com/models/24869?modelVersionId=29755 ##

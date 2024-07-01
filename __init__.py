@@ -1,7 +1,7 @@
 """
-@author: YFG
-@title: YFG Comical Nodes
-@nickname: YFG Comical Nodes
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
 @description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 

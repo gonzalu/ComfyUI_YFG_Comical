@@ -1,0 +1,15 @@
+[project]
+name = "comfyui_yfg_comical"
+description = "Utility custom nodes for special effects, image manipulation and quality of life tools."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["transformers", "typer", "typing-extensions"]
+
+[project.urls]
+Repository = "https://github.com/gonzalu/ComfyUI_YFG_Comical"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "gonzalu"
+DisplayName = "ComfyUI_YFG_Comical"
+Icon = "https://github.com/gonzalu/ComfyUI_YFG_Comical/raw/main/img/lion-face.svg"

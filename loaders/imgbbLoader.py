@@ -1,9 +1,10 @@
 """
-@app_author: YFG
-@app_title: YFG Image Loader from imgBB
-@app_nickname: 🐯 YFG imgBB Loader
-@app_description: This node loads an image from a provided URL and outputs the image and mask.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
+
 import io
 import torch
 import requests

@@ -1,8 +1,8 @@
 """
-@author: YFG
-@title: YFG Histograms
-@nickname: 🐯 YFG Histograms
-@description: This extension calculates the histogram of an image and outputs the results as graph images for individual channels as well as RGB and Luminosity.
+@author: Manny Gonzalez
+@title: 🐯 YFG Comical Nodes
+@nickname: 🐯 YFG Comical Nodes
+@description: Utility custom nodes for special effects, image manipulation and quality of life tools.
 """
 from math import ceil, sqrt
 import torch
