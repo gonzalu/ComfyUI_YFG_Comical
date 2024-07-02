@@ -40,7 +40,9 @@ class ImagesSideBySideNode:
                 "font_color": (["White", "Black", "Red", "Green", "Blue", "Yellow", "Brown", "Orange"], {"default": "White"}),
                 "font_file": ("STRING", {"default": "micross.ttf"}),                
                 "image_label": ("BOOLEAN", {"default": True}),
-                "preview": ("BOOLEAN", {"default": True}),                
+                "preview": ("BOOLEAN", {"default": True}),
+                "image1_label": ("STRING", {"default": "image1"}),
+                "image2_label": ("STRING", {"default": "image2"}),
             },
             "hidden": {
                 "prompt": "PROMPT",
@@ -54,14 +56,14 @@ class ImagesSideBySideNode:
     FUNCTION = "combine_images"
     CATEGORY = "🐯 YFG"
 
-    def combine_images(self, image1, image2, mode, preview, display, font_file, font_size, font_color, image_label, prompt=None, extra_pnginfo=None):
+    def combine_images(self, image1, image2, mode, preview, display, font_file, font_size, font_color, image_label, image1_label, image2_label, prompt=None, extra_pnginfo=None):
         pil_image1 = tensor2pil(image1)
         pil_image2 = tensor2pil(image2)
 
         if mode == "Split":
-            combined_image = self.make_split(pil_image1, pil_image2, font_file, font_size, font_color, image_label)
+            combined_image = self.make_split(pil_image1, pil_image2, font_file, font_size, font_color, image_label, image1_label, image2_label)
         else:
-            combined_image = self.make_side_by_side(pil_image1, pil_image2, font_file, font_size, font_color, image_label)
+            combined_image = self.make_side_by_side(pil_image1, pil_image2, font_file, font_size, font_color, image_label, image1_label, image2_label)
         
         if not preview:
             return (pil2tensor(combined_image),)
@@ -82,7 +84,7 @@ class ImagesSideBySideNode:
             "result": (pil2tensor(combined_image),),
         }
 
-    def make_side_by_side(self, image1, image2, font_file, font_size, font_color, image_label):
+    def make_side_by_side(self, image1, image2, font_file, font_size, font_color, image_label, image1_label, image2_label):
         width1, height1 = image1.size
         width2, height2 = image2.size
         total_width = width1 + width2
@@ -107,11 +109,11 @@ class ImagesSideBySideNode:
         self.draw_outline(draw, separator_x, third_height, 2 * third_height, 10)
 
         if image_label:
-            self.add_labels(draw, width1, width2, max_height, "Image 1", "Image 2", font_file, font_size, font_color)
+            self.add_labels(draw, width1, width2, max_height, image1_label, image2_label, font_file, font_size, font_color)
 
         return new_image
 
-    def make_split(self, image1, image2, font_file, font_size, font_color, image_label):
+    def make_split(self, image1, image2, font_file, font_size, font_color, image_label, image1_label, image2_label):
         width1, height1 = image1.size
         width2, height2 = image2.size
         half_width1 = width1 // 2
@@ -141,7 +143,7 @@ class ImagesSideBySideNode:
         self.draw_outline(draw, separator_x, third_height, 2 * third_height, 10)
 
         if image_label:
-            self.add_labels(draw, half_width1, half_width2, max_height, "Image 1", "Image 2", font_file, font_size, font_color)
+            self.add_labels(draw, half_width1, half_width2, max_height, image1_label, image2_label, font_file, font_size, font_color)
 
         return new_image
 
