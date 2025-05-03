@@ -38,13 +38,13 @@ class RandomOrgTrueRandomNumber:
             }
         }
 
-    # Only emits one number, so a single output
-    RETURN_TYPES = ("NUMBER",)
+    # Emit Number, Float, and Integer outputs to match dependent nodes
+    RETURN_TYPES = ("NUMBER", "FLOAT", "INT")
     FUNCTION = "return_true_random_number"
-    CATEGORY = "Custom/Number"
+    CATEGORY = "🐯 YFG/🔢 Numbers"
 
     def return_true_random_number(self, api_key, minimum, maximum, mode="random"):
-        """Generate one true random integer and return as NUMBER"""
+        """Generate one true random integer and return as NUMBER, FLOAT, and INT"""
         nums = self.get_random_numbers(
             api_key=api_key,
             amount=1,
@@ -52,7 +52,8 @@ class RandomOrgTrueRandomNumber:
             maximum=maximum,
             mode=mode
         )
-        return (nums[0],)
+        number = nums[0]
+        return (number, float(number), int(number))
 
     def get_random_numbers(self, api_key, amount=1, minimum=0, maximum=10, mode="random"):
         """Fetches `amount` true random integers from random.org."""
@@ -83,7 +84,6 @@ class RandomOrgTrueRandomNumber:
             data = response.json()
             if "result" in data and "random" in data["result"]:
                 return data["result"]["random"]["data"]
-
         return [0]
 
     @classmethod
