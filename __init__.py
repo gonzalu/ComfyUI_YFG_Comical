@@ -18,6 +18,7 @@ from .VAEDecodePreview import VAEDecodePreview
 from .MonoClip import MonoClip
 from .pixelart import PixelArt
 from .textMaskOverlay import TextMaskOverlay
+from .RandomOrg import RandomOrgTrueRandomNumber
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -37,7 +38,8 @@ NODE_CLASS_MAPPINGS = {
     "VAEDecodePreview_node": VAEDecodePreview,
     "MonoClip_node": MonoClip,
     "PixelArt_node": PixelArt,
-    "textMaskOverlay_node": TextMaskOverlay,    
+    "textMaskOverlay_node": TextMaskOverlay,
+    "RandomOrgTrueRandomNumber_node": RandomOrgTrueRandomNumber,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -58,7 +60,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VAEDecodePreview_node": "\ud83d\udc2f YFG VAE Decode with Preview",
     "MonoClip_node": "\ud83d\udc2f YFG Monochrome Image Clip",
     "PixelArt_node": "\ud83d\udc2f YFG PixelArt",
-    "textMaskOverlay_node": "\ud83d\udc2f YFG Text Mask Overlay",   
+    "textMaskOverlay_node": "\ud83d\udc2f YFG Text Mask Overlay",
+    "RandomOrgTrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number",    
 }
 WEB_DIRECTORY = "./web"
 print("------------------+-------------------") 
