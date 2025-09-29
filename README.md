@@ -337,9 +337,11 @@ This node integrates with the [random.org JSON-RPC API](https://api.random.org/j
    ```
 
 2. Or, set an environment variable before launching ComfyUI:
+bash
    ```bash
    export RANDOM_ORG_API_KEY=YOUR_API_KEY_HERE
    ```
+powershell
    ```powershell
    setx RANDOM_ORG_API_KEY "YOUR_API_KEY_HERE"
    ```
@@ -347,21 +349,21 @@ This node integrates with the [random.org JSON-RPC API](https://api.random.org/j
 
 - **Generate random integer between 1 and 100:**
 
--minimum = 1
--maximum = 100
--mode = random
+  - minimum = 1
+  - maximum = 100
+  - mode = random
 
 - **Ensure no repeats in current range:**
 
--Enable ensure_unique
--Set unique_scope = range
--Adjust history_size and time_window_sec
+  - Enable ensure_unique
+  - Set unique_scope = range
+  - Adjust history_size and time_window_sec
 
 #### 📌 Notes
 
--Session-lifetime uniqueness: resets when Python restarts.
--Persistence: future versions may add file-based persistence.
--API limits: random.org quotas apply — check your account dashboard.
+- Session-lifetime uniqueness: resets when Python restarts.
+- Persistence: future versions may add file-based persistence.
+- API limits: random.org quotas apply — check your account dashboard.
 
 ## Examples
 
