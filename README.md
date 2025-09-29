@@ -293,6 +293,50 @@ Modified version of original node from WAS node suite since that node is current
 
 *This node is based on original code by WASasquatch https://github.com/WASasquatch/was-node-suite-comfyui*
 
+---
+
+### Random.org True Random Number (V2)
+
+![random-number-v2](img/RandomOrgV2TrueRandomNumber.png)
+
+This node integrates with the [random.org JSON-RPC API](https://api.random.org/json-rpc/2/) to generate **true random numbers** directly from atmospheric noise, instead of relying on pseudo-random algorithms.
+
+#### ✨ Features
+
+- **Secure API key handling**  
+  API key is never exposed in ComfyUI UI, workflow JSON, or image metadata.  
+  Loaded at runtime from:
+  1. Environment variable `RANDOM_ORG_API_KEY`, or
+  2. A local JSON file `random_org_api_key.json` stored next to the node file.
+
+- **Flexible outputs**  
+  Provides three output types for compatibility with downstream nodes:
+  - `NUMBER`
+  - `FLOAT`
+  - `INT`
+
+- **Optional uniqueness filtering**  
+  Avoids repeating values within a session:
+  - `ensure_unique` → toggle de-duplication
+  - `unique_scope` → `"range"` (per `[min, max]`) or `"global"` (all ranges)
+  - `history_size` → how many values to remember
+  - `time_window_sec` → duplicates ignored if older than this window
+  - `retry_limit` → number of re-draw attempts
+
+- **Backwards compatibility**  
+  The old `RandomOrgTrueRandomNumber_node` remains available.  
+  The new node is registered as `RandomOrgV2TrueRandomNumber_node`.
+
+#### 🔑 API Key Setup
+
+1. Create `random_org_api_key.json` next to `RandomOrgV2.py`:
+   ```json
+   {
+     "api_key": "YOUR_API_KEY_HERE"
+   }
+   ```
+   
+
 ## Examples
 
 ### Sample Workflow

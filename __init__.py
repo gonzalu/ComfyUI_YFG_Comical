@@ -19,6 +19,7 @@ from .MonoClip import MonoClip
 from .pixelart import PixelArt
 from .textMaskOverlay import TextMaskOverlay
 from .RandomOrg import RandomOrgTrueRandomNumber
+from .RandomOrgV2 import RandomOrgV2TrueRandomNumber
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -40,6 +41,7 @@ NODE_CLASS_MAPPINGS = {
     "PixelArt_node": PixelArt,
     "textMaskOverlay_node": TextMaskOverlay,
     "RandomOrgTrueRandomNumber_node": RandomOrgTrueRandomNumber,
+    "RandomOrgV2TrueRandomNumber_node": RandomOrgV2TrueRandomNumber,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -61,7 +63,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MonoClip_node": "\ud83d\udc2f YFG Monochrome Image Clip",
     "PixelArt_node": "\ud83d\udc2f YFG PixelArt",
     "textMaskOverlay_node": "\ud83d\udc2f YFG Text Mask Overlay",
-    "RandomOrgTrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number",    
+    "RandomOrgTrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number",
+    "RandomOrgV2TrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number (V2)",
 }
 WEB_DIRECTORY = "./web"
 print("------------------+-------------------") 
