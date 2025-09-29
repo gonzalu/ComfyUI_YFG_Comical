@@ -351,15 +351,15 @@ This node integrates with the [random.org JSON-RPC API](https://api.random.org/j
 
 - **Generate random integer between 1 and 100:**
 
-  - minimum = 1
-  - maximum = 100
-  - mode = random
+  - `minimum = 1`
+  - `maximum = 100`
+  - `mode = random`
 
 - **Ensure no repeats in current range:**
 
-  - Enable ensure_unique
-  - Set unique_scope = range
-  - Adjust history_size and time_window_sec
+  - Enable `ensure_unique`
+  - Set `unique_scope = range`
+  - Adjust `history_size` and `time_window_sec`
 
 #### 📌 Notes
 
