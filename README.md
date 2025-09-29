@@ -337,6 +337,7 @@ This node integrates with the [random.org JSON-RPC API](https://api.random.org/j
    ```
 
 2. Or, set an environment variable before launching ComfyUI:
+   
    bash
    ```bash
    export RANDOM_ORG_API_KEY=YOUR_API_KEY_HERE
