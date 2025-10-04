@@ -238,6 +238,86 @@ Integrates with the [random.org JSON-RPC API](https://api.random.org/json-rpc/2/
 - **Persistence** (disk-based history) may be added in a future version.  
 - **API limits**: Random.org quotas apply — check your dashboard.
 
+### Random Image From Directory
+
+![Random Image From Directory](img/RandomImageFromDirectory.png)
+
+This node selects a single image from a given directory (with optional recursion into subdirectories).  
+It supports **true randomness** (via Random.org integration if configured) or deterministic selection by index/filename.  
+It also tracks previously selected images so you can compare “current” vs “previous” outputs.
+
+#### ✨ Features
+- **Directory traversal**
+  - Select only from the top folder, or include all subdirectories.
+- **Multiple selection modes**
+  - `random`: choose a random image (true random if Random.org is enabled, otherwise local PRNG).
+  - `by_index`: pick image by numeric index (safe wraparound).
+  - `by_filename`: select a file by exact name or substring.
+  - `by_query`: glob-style matching (`*.png`, `cat*`, etc.), random among matches.
+- **Uniqueness filtering**
+  - Avoids repeating the same file within the same session.
+  - Scope can be per-directory or global.
+  - Adjustable `history_size` and `time_window_sec` for fine control.
+- **Metadata outputs**
+  - Current/previous file info, image size, and SHA256 hash of the file.
+  - Also reports `total_count` = number of eligible images found.
+
+#### 🔧 Input Parameters
+- **`image_directory`** *(string)* – Path to the folder containing images.  
+- **`include_subdirs`** *(bool, default: True)* – Whether to scan subdirectories.  
+- **`selection_mode`** *(choice, default: random)* – Image selection method.  
+- **`index`** *(int)* – Used when `selection_mode=by_index`.  
+- **`filename_query`** *(string)* – Used when `selection_mode=by_filename` or `by_query`.  
+- **`random_source`** *(choice, default: auto)* –  
+  - `auto`: use Random.org if API key is configured, else local PRNG.  
+  - `local`: always use local PRNG.  
+  - `random_org`: force Random.org usage (requires API key).  
+- **`ensure_unique`** *(bool)* – Prevent repeats during a session.  
+- **`unique_scope`** *(choice)* – `"directory"` or `"global"`.  
+- **`history_size`** *(int, default: 512)* – Max remembered items.  
+- **`time_window_sec`** *(int, default: 0)* – Forget items older than this many seconds.  
+- **`retry_limit`** *(int, default: 16)* – Max retries when avoiding duplicates.
+
+#### 🖥️ Outputs
+1. **`image`** – The loaded image tensor.  
+2. **`path_current`** – Full path of the selected image (current).  
+3. **`index_current`** – Index of the selected image (current).  
+4. **`filename_current`** – Filename of the selected image.  
+5. **`width`** – Width of the image in pixels.  
+6. **`height`** – Height of the image in pixels.  
+7. **`sha256`** – SHA256 checksum of the file (useful for deduplication).  
+8. **`total_count`** – Total number of eligible images discovered in the directory (after filters).  
+9. **`path_previous`** – Full path of the image from the previous run.  
+10. **`index_previous`** – Index of the image from the previous run.  
+
+#### 🔑 Random.org Setup (optional)
+- To enable true randomness, place your API key in `random_org_api_key.json` next to the node:
+1. Create `random_org_api_key.json` next to `RandomOrgV2.py`:
+
+   ```json
+   {
+     "api_key": "YOUR_API_KEY_HERE"
+   }
+   ```
+
+2. Or set an environment variable before launching ComfyUI:
+
+   ```bash
+   export RANDOM_ORG_API_KEY=YOUR_API_KEY_HERE
+   ```
+
+   On Windows (PowerShell):
+
+   ```powershell
+   setx RANDOM_ORG_API_KEY "YOUR_API_KEY_HERE"
+   ```
+#### 📌 Notes
+
+- **Current vs previous outputs** make it easy to compare selections.
+- **Session-lifetime uniqueness** resets when Python restarts.
+- **Persistence** future versions may add file-based persistence.  
+- **API limits**: Random.org quotas apply — check your dashboard.
+
 ---
 
 ## Examples
