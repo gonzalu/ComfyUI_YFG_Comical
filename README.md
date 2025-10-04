@@ -29,6 +29,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
     + [Image Switchers](#image-switchers)
     + [Random.org True Random Number](#randomorg-true-random-number)
     + [Random.org True Random Number (V2)](#randomorg-true-random-number-v2)
+	+ [Random Image From Directory](#random-image-from-directory)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
