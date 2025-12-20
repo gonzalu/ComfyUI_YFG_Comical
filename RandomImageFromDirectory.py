@@ -24,6 +24,8 @@ import requests
 
 # ---------------- helpers ----------------
 
+NODE_VERSION = "1.3.2"
+
 ALLOWED_EXT = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
 
 def natural_key(s: str):
@@ -166,31 +168,119 @@ class RandomImageFromDirectory:
     Supports Random.org (optional) and session de-duplication.
     """
 
+    # Node hover/help text (ComfyUI will surface this in the UI)
+    DESCRIPTION = (
+        f"YFG Random Image From Directory (v{NODE_VERSION})\n\n"
+        "Loads an image from a directory (optionally including subfolders).\n"
+        "Modes:\n"
+        "  • random: chooses a random image.\n"
+        "  • by_index: chooses a specific image index (clamped to [0..last]).\n"
+        "  • by_filename: chooses the first match for an exact/substring filename.\n"
+        "  • by_query: wildcard/glob-like match (e.g. *.png), then random among matches.\n\n"
+        "Uniqueness:\n"
+        "  • If ensure_unique=true, recently-used images are avoided within the configured history/time window.\n"
+        "Random source:\n"
+        "  • auto uses random.org if API key is present, otherwise local random.\n"
+    )
+
+    # Output hover tips (one string per RETURN_NAMES item, in order)
+    OUTPUT_TOOLTIPS = (
+        "The selected image as an IMAGE tensor.",
+        "Full path to the currently selected image file.",
+        "0-based index of the selected image within the (sorted) file list.",
+        "Filename of the selected image (basename only).",
+        "Image width (pixels).",
+        "Image height (pixels).",
+        "SHA-256 hash of the file contents (useful for de-duping / auditing).",
+        "Total number of images discovered in the directory (and subdirs if enabled).",
+        "Full path to the previously selected image in this ComfyUI session.",
+        "0-based index of the previously selected image in this ComfyUI session.",
+    )
+
     @classmethod
     def INPUT_TYPES(cls):
+        # Note: ComfyUI builds may look for 'tooltip' or 'description' for hover help.
+        # Including both is safe; unknown keys are ignored.
         return {
             "required": {
-                "image_directory": ("STRING", {"multiline": False, "placeholder": "Image Directory"}),
-                "include_subdirs": ("BOOLEAN", {"default": True}),
-                # defaults changed here:
-                "selection_mode": (["by_index", "by_filename", "by_query", "random"], {"default": "random"}),
-                "index": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "filename_query": ("STRING", {"multiline": False, "placeholder": "Exact filename or substring (by_filename/by_query)"}),
-                # default changed here:
-                "random_source": (["auto", "local", "random_org"], {"default": "auto"}),
-                "ensure_unique": ("BOOLEAN", {"default": False}),
-                "unique_scope": (["directory", "global"],),
-                "history_size": ("INT", {"default": 512, "min": 1, "max": 100000}),
-                "time_window_sec": ("INT", {"default": 0, "min": 0, "max": 604800}),
-                "retry_limit": ("INT", {"default": 16, "min": 1, "max": 999}),
+                "image_directory": ("STRING", {
+                    "multiline": False,
+                    "placeholder": "Image Directory",
+                    "tooltip": "Directory containing image files to pick from.",
+                    "description": "Directory containing image files to pick from.",
+                }),
+                "include_subdirs": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "If true, search subfolders recursively.",
+                    "description": "If true, search subfolders recursively.",
+                }),
+
+                "selection_mode": (["by_index", "by_filename", "by_query", "random"], {
+                    "default": "random",
+                    "tooltip": "How to pick the image: random, by_index, by_filename, or by_query (wildcard).",
+                    "description": "How to pick the image: random, by_index, by_filename, or by_query (wildcard).",
+                }),
+
+                "index": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Used only for by_index. Out-of-bounds is clamped: <0→0, >=count→last.",
+                    "description": "Used only for by_index. Out-of-bounds is clamped: <0→0, >=count→last.",
+                }),
+
+                "filename_query": ("STRING", {
+                    "multiline": False,
+                    "placeholder": "Exact filename or substring (by_filename/by_query)",
+                    "tooltip": "Used by by_filename/by_query. by_query supports * and ? wildcards.",
+                    "description": "Used by by_filename/by_query. by_query supports * and ? wildcards.",
+                }),
+
+                "random_source": (["auto", "local", "random_org"], {
+                    "default": "auto",
+                    "tooltip": "auto uses random.org if API key exists; otherwise uses local random.",
+                    "description": "auto uses random.org if API key exists; otherwise uses local random.",
+                }),
+
+                "ensure_unique": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "If true, avoid recently-used images (based on history_size/time_window_sec).",
+                    "description": "If true, avoid recently-used images (based on history_size/time_window_sec).",
+                }),
+
+                "unique_scope": (["directory", "global"], {
+                    "tooltip": "directory: uniqueness tracked per-directory. global: shared across all directories.",
+                    "description": "directory: uniqueness tracked per-directory. global: shared across all directories.",
+                }),
+
+                "history_size": ("INT", {
+                    "default": 512,
+                    "min": 1,
+                    "max": 100000,
+                    "tooltip": "How many recent selections to remember for uniqueness checks.",
+                    "description": "How many recent selections to remember for uniqueness checks.",
+                }),
+
+                "time_window_sec": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 604800,
+                    "tooltip": "If >0, forget uniqueness history entries older than this many seconds.",
+                    "description": "If >0, forget uniqueness history entries older than this many seconds.",
+                }),
+
+                "retry_limit": ("INT", {
+                    "default": 16,
+                    "min": 1,
+                    "max": 999,
+                    "tooltip": "Maximum attempts to find a unique candidate before falling back.",
+                    "description": "Maximum attempts to find a unique candidate before falling back.",
+                }),
             }
         }
 
-
     # keep the first four outputs identical for backward compatibility,
     # then add current index & filename, then metadata
-
-
     RETURN_TYPES = (
         "IMAGE",
         "STRING",  # path_current
@@ -260,11 +350,19 @@ class RandomImageFromDirectory:
             return p
 
         if selection_mode == "by_index":
-            idx = index % n
+            # v1.3.2: clamp (no wrap). This protects users from silent modulo surprises.
+            raw = int(index)
+            if raw < 0:
+                idx = 0
+            elif raw >= n:
+                idx = n - 1
+            else:
+                idx = raw
+
             p = try_accept(idx)
             if p is None and ensure_unique:
                 for _ in range(retry_limit):
-                    idx = (idx + 1) % n
+                    idx = min(n - 1, idx + 1)
                     p = try_accept(idx)
                     if p is not None:
                         break
@@ -309,7 +407,6 @@ class RandomImageFromDirectory:
             tries += 1
         return files[idx], idx  # last resort
 
-
     def load(
         self,
         image_directory,
@@ -332,7 +429,7 @@ class RandomImageFromDirectory:
             raise Exception(f"No images found in '{image_directory}' (include_subdirs={include_subdirs})")
 
         total_count = len(files)
-    
+
         path, idx = self._choose(
             files, selection_mode, index, filename_query, random_source,
             ensure_unique, unique_scope, history_size, time_window_sec,
@@ -356,8 +453,6 @@ class RandomImageFromDirectory:
         w, h = img.size
         sha = image_sha256(path)
 
-        # then add current index/filename + metadata
-        
         return (
             img_tensor,
             filename_path,        # path_current
@@ -387,4 +482,3 @@ class RandomImageFromDirectory:
             m.update(str(v).encode("utf-8"))
             m.update(b"|")
         return m.hexdigest()
-
