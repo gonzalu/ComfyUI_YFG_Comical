@@ -24,7 +24,7 @@ import requests
 
 # ---------------- helpers ----------------
 
-NODE_VERSION = "1.3.2"
+NODE_VERSION = "1.3.3"
 
 ALLOWED_EXT = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
 
@@ -350,7 +350,7 @@ class RandomImageFromDirectory:
             return p
 
         if selection_mode == "by_index":
-            # v1.3.2: clamp (no wrap). This protects users from silent modulo surprises.
+            # v1.3.2+: clamp (no wrap), and ALWAYS honor the requested index.
             raw = int(index)
             if raw < 0:
                 idx = 0
@@ -359,14 +359,17 @@ class RandomImageFromDirectory:
             else:
                 idx = raw
 
-            p = try_accept(idx)
-            if p is None and ensure_unique:
-                for _ in range(retry_limit):
-                    idx = min(n - 1, idx + 1)
-                    p = try_accept(idx)
-                    if p is not None:
-                        break
+            p = files[idx]
+
+            # IMPORTANT: by_index is deterministic. Do NOT "skip" to another index when ensure_unique is enabled.
+            # We can still remember it for history bookkeeping, but never reject it.
+            if ensure_unique:
+                scope_key = "global" if unique_scope == "global" else f"dir::{Path(directory).resolve()}"
+                val_key = str(p.resolve())
+                _UniqueHistory.remember_and_check(scope_key, val_key, history_size, time_window_sec)
+
             return p, idx
+
 
         if selection_mode == "by_filename":
             q = filename_query.strip()
