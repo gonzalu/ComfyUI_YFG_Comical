@@ -22,9 +22,11 @@ import folder_paths
 import node_helpers
 import requests
 
+import uuid
+
 # ---------------- helpers ----------------
 
-NODE_VERSION = "1.3.3"
+NODE_VERSION = "1.3.5"
 
 ALLOWED_EXT = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
 
@@ -113,6 +115,42 @@ def random_org_int(minimum: int, maximum: int) -> Optional[int]:
     except Exception:
         pass
     return None
+    
+def _tensor_to_pil_first_image(img_tensor):
+    """
+    Convert ComfyUI IMAGE tensor -> PIL Image.
+    Expects [B,H,W,3] float32 0..1. Uses first item in batch.
+    """
+    if img_tensor.dim() == 4:
+        t = img_tensor[0]
+    elif img_tensor.dim() == 3:
+        t = img_tensor
+    else:
+        raise ValueError(f"Unsupported tensor dim for preview: {img_tensor.dim()}")
+
+    t = t.detach().cpu().clamp(0.0, 1.0)
+    arr = (t.numpy() * 255.0).astype(np.uint8)  # HWC
+    return Image.fromarray(arr, mode="RGB")
+
+
+def _save_temp_preview_png(img_tensor, prefix="yfg_preview"):
+    """
+    Save a preview PNG into ComfyUI temp directory and return (filename, subfolder, type)
+    for the UI preview payload.
+    """
+    temp_dir = folder_paths.get_temp_directory()
+    os.makedirs(temp_dir, exist_ok=True)
+
+    filename = f"{prefix}_{uuid.uuid4().hex}.png"
+    full_path = os.path.join(temp_dir, filename)
+
+    pil = _tensor_to_pil_first_image(img_tensor)
+    pil.save(full_path, format="PNG")
+
+    # For temp previews, ComfyUI expects:
+    # type="temp", subfolder="" (unless you create subfolders under temp)
+    return filename, "", "temp"
+
 
 # ---- session uniqueness ----
 
@@ -181,6 +219,10 @@ class RandomImageFromDirectory:
         "  • If ensure_unique=true, recently-used images are avoided within the configured history/time window.\n"
         "Random source:\n"
         "  • auto uses random.org if API key is present, otherwise local random.\n"
+        "Changelog:\n"
+        "1.3.5  Added built-in preview output for UI-driven nodes (Resolution Master compatible)\n"
+        "       Strict by_index behavior, shuffle-bag uniqueness, full tooltip support\n"
+
     )
 
     # Output hover tips (one string per RETURN_NAMES item, in order)
@@ -220,6 +262,13 @@ class RandomImageFromDirectory:
                     "tooltip": "How to pick the image: random, by_index, by_filename, or by_query (wildcard).",
                     "description": "How to pick the image: random, by_index, by_filename, or by_query (wildcard).",
                 }),
+
+                "show_preview": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "If enabled, show a preview thumbnail (and publish UI preview metadata for downstream nodes).",
+                    "description": "If enabled, show a preview thumbnail (and publish UI preview metadata for downstream nodes).",
+                }),
+
 
                 "index": ("INT", {
                     "default": 0,
@@ -422,7 +471,8 @@ class RandomImageFromDirectory:
         unique_scope,
         history_size,
         time_window_sec,
-        retry_limit
+        retry_limit,
+        show_preview
     ):
         if not os.path.exists(image_directory):
             raise Exception(f"Image directory {image_directory} does not exist")
@@ -444,6 +494,44 @@ class RandomImageFromDirectory:
         img = node_helpers.pillow(Image.open, str(path))
         img_tensor = pillow_to_tensor(img)
 
+
+        img = node_helpers.pillow(Image.open, str(path))
+        img_tensor = pillow_to_tensor(img)
+
+        # --- DEBUG: print shape/dtype/device to console ---
+        print("YFG RandomImageFromDirectory IMAGE:",
+              "dtype=", getattr(img_tensor, "dtype", None),
+              "device=", getattr(img_tensor, "device", None),
+              "shape=", getattr(img_tensor, "shape", None))
+
+        # --- NORMALIZE to standard ComfyUI IMAGE: [B,H,W,3] float32 0..1, CPU, contiguous ---
+        import torch
+
+        if not isinstance(img_tensor, torch.Tensor):
+            img_tensor = torch.tensor(img_tensor)
+
+        img_tensor = img_tensor.float()
+
+        # add batch if missing
+        if img_tensor.dim() == 3:
+            img_tensor = img_tensor.unsqueeze(0)
+
+        # CHW -> HWC if needed
+        if img_tensor.dim() == 4 and img_tensor.shape[1] in (1, 3, 4) and img_tensor.shape[-1] not in (1, 3, 4):
+            img_tensor = img_tensor.permute(0, 2, 3, 1).contiguous()
+
+        # drop alpha
+        if img_tensor.dim() == 4 and img_tensor.shape[-1] == 4:
+            img_tensor = img_tensor[..., :3]
+
+        # if animated / multi-frame, keep first frame only (optional but often fixes Resolution Master)
+        if img_tensor.dim() == 4 and img_tensor.shape[0] > 1:
+            img_tensor = img_tensor[:1]
+
+        img_tensor = img_tensor.clamp(0.0, 1.0).contiguous().cpu()
+
+
+
         # backward-compatible first 4
         filename_path = str(path)
         prev_index = RandomImageFromDirectory._prev_index
@@ -456,18 +544,26 @@ class RandomImageFromDirectory:
         w, h = img.size
         sha = image_sha256(path)
 
-        return (
+        result = (
             img_tensor,
-            filename_path,        # path_current
-            int(idx),             # index_current
-            path.name,            # filename_current
+            filename_path,
+            int(idx),
+            path.name,
             int(w),
             int(h),
             sha,
-            int(total_count),     # total_count
-            prev_path,            # path_previous
-            prev_index            # index_previous
+            int(total_count),
+            prev_path,
+            int(prev_index),
         )
+
+        if show_preview:
+            # Save a temp PNG and publish standard ComfyUI preview metadata
+            fn, sub, typ = _save_temp_preview_png(img_tensor, prefix="yfg_randomdir")
+            return {"ui": {"images": [{"filename": fn, "subfolder": sub, "type": typ}]},
+                    "result": result}
+
+        return result
 
     @classmethod
     def IS_CHANGED(cls, image_directory, include_subdirs, selection_mode, index, filename_query,
