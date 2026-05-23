@@ -26,7 +26,7 @@ import uuid
 
 # ---------------- helpers ----------------
 
-NODE_VERSION = "1.3.5"
+NODE_VERSION = "1.3.6"
 
 ALLOWED_EXT = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
 
@@ -152,6 +152,36 @@ def _save_temp_preview_png(img_tensor, prefix="yfg_preview"):
     return filename, "", "temp"
 
 
+# ---- directory history ----
+
+_HISTORY_FILE = Path(__file__).with_name("yfg_dir_history.json")
+_HISTORY_MAX = 50
+
+def _read_history() -> list:
+    try:
+        if _HISTORY_FILE.exists():
+            data = json.loads(_HISTORY_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                return data
+    except Exception:
+        pass
+    return []
+
+def _write_history(entries: list):
+    try:
+        _HISTORY_FILE.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+def _add_to_history(directory: str):
+    directory = str(directory).strip()
+    if not directory:
+        return
+    entries = _read_history()
+    entries = [e for e in entries if e != directory]
+    entries.insert(0, directory)
+    _write_history(entries[:_HISTORY_MAX])
+
 # ---- session uniqueness ----
 
 class _UniqueHistory:
@@ -198,6 +228,69 @@ class _UniqueHistory:
 
         return already
 
+# ---- server-side API routes (dir browser + history) ----
+
+try:
+    from server import PromptServer
+    from aiohttp import web as _web
+
+    @PromptServer.instance.routes.get("/yfg/dir_browse")
+    async def _yfg_dir_browse(request):
+        path_param = request.rel_url.query.get("path", "").strip()
+
+        if not path_param:
+            if os.name == "nt":
+                import string
+                drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\")]
+                return _web.json_response({
+                    "path": "",
+                    "parent": None,
+                    "dirs": [{"name": d, "path": d} for d in drives]
+                })
+            else:
+                path_param = "/"
+
+        p = Path(path_param)
+        if not p.exists() or not p.is_dir():
+            return _web.json_response({"error": f"Not a directory: {path_param}"}, status=400)
+
+        parent_p = p.parent
+        parent = None if parent_p == p else str(parent_p)
+
+        try:
+            dirs = sorted(
+                [{"name": d.name, "path": str(d)}
+                 for d in p.iterdir()
+                 if d.is_dir() and not d.name.startswith(".")],
+                key=lambda x: x["name"].lower()
+            )
+        except PermissionError:
+            dirs = []
+
+        return _web.json_response({"path": str(p), "parent": parent, "dirs": dirs})
+
+    @PromptServer.instance.routes.get("/yfg/dir_history")
+    async def _yfg_dir_history_get(request):
+        return _web.json_response(_read_history())
+
+    @PromptServer.instance.routes.post("/yfg/dir_history/remove")
+    async def _yfg_dir_history_remove(request):
+        body = await request.json()
+        directory = body.get("directory", "")
+        entries = [e for e in _read_history() if e != directory]
+        _write_history(entries)
+        return _web.json_response({"ok": True})
+
+    @PromptServer.instance.routes.post("/yfg/dir_history/clear")
+    async def _yfg_dir_history_clear(request):
+        _write_history([])
+        return _web.json_response({"ok": True})
+
+    print("[YFG] dir_browse routes registered.")
+
+except Exception as _e:
+    print(f"[YFG] Warning: could not register dir_browse routes: {_e}")
+
 # ---------------- the node (original class name) ----------------
 
 class RandomImageFromDirectory:
@@ -220,6 +313,9 @@ class RandomImageFromDirectory:
         "Random source:\n"
         "  • auto uses random.org if API key is present, otherwise local random.\n"
         "Changelog:\n"
+        "1.3.6  Fixed directory browser: corrected JS import path and added missing\n"
+        "       Python API routes (/yfg/dir_browse, /yfg/dir_history).\n"
+        "       Auto-saves used directories to history on each run.\n"
         "1.3.5  Added built-in preview output for UI-driven nodes (Resolution Master compatible)\n"
         "       Strict by_index behavior, shuffle-bag uniqueness, full tooltip support\n"
 
@@ -477,6 +573,7 @@ class RandomImageFromDirectory:
         if not os.path.exists(image_directory):
             raise Exception(f"Image directory {image_directory} does not exist")
 
+        _add_to_history(image_directory)
         files = list_images(image_directory, include_subdirs)
         if not files:
             raise Exception(f"No images found in '{image_directory}' (include_subdirs={include_subdirs})")

@@ -248,11 +248,15 @@ It supports **true randomness** (via Random.org integration if configured) or de
 It also tracks previously selected images so you can compare “current” vs “previous” outputs.
 
 #### ✨ Features
+- **Built-in directory browser**
+  - **📁 Browse for Directory** button opens a navigable server-side folder picker — no need to type paths manually.
+  - **🕐 Recent Directories** button shows an MRU list of previously used directories for quick re-selection.
+  - Used directories are saved automatically to `yfg_dir_history.json` on each run.
 - **Directory traversal**
   - Select only from the top folder, or include all subdirectories.
 - **Multiple selection modes**
   - `random`: choose a random image (true random if Random.org is enabled, otherwise local PRNG).
-  - `by_index`: pick image by numeric index (safe wraparound).
+  - `by_index`: pick image by numeric index (clamped to valid range — no wrap-around).
   - `by_filename`: select a file by exact name or substring.
   - `by_query`: glob-style matching (`*.png`, `cat*`, etc.), random among matches.
 - **Uniqueness filtering**
@@ -277,6 +281,7 @@ It also tracks previously selected images so you can compare “current” vs �
 - **`unique_scope`** *(choice)* – `"directory"` or `"global"`.  
 - **`history_size`** *(int, default: 512)* – Max remembered items.  
 - **`time_window_sec`** *(int, default: 0)* – Forget items older than this many seconds.  
+- **`show_preview`** *(bool, default: False)* – Show a preview thumbnail on the node after each run.
 - **`retry_limit`** *(int, default: 16)* – Max retries when avoiding duplicates.
 
 #### 🖥️ Outputs
@@ -316,7 +321,7 @@ It also tracks previously selected images so you can compare “current” vs �
 
 - **Current vs previous outputs** make it easy to compare selections.
 - **Session-lifetime uniqueness** resets when Python restarts.
-- **Persistence** future versions may add file-based persistence.  
+- **Directory history** is persisted to `yfg_dir_history.json` and survives restarts (max 50 entries).
 - **API limits**: Random.org quotas apply — check your dashboard.
 
 ---
