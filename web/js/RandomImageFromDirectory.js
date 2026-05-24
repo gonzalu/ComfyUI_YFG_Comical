@@ -1,21 +1,32 @@
 /**
- * YFG Random Image From Directory — UI Extension v1.1.0
+ * YFG Random Image From Directory — UI Extension v1.2.0
  *
  * Adds two native buttons to the RandomImageFromDirectory_node:
  *   📁 Browse for Directory  — navigable server-side directory browser modal
  *   🕐 Recent Directories    — MRU list from /yfg/dir_history
  *
- * Uses beforeRegisterNodeDef + addWidget("button") for maximum compatibility
- * across all ComfyUI versions.
+ * v1.2.0: Inline output slot value display — shows index, dimensions,
+ *         total count and previous index directly next to each output slot.
  *
  * @author  Manny Gonzalez
  * @title   🐯 YFG Comical Nodes
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 import { app } from "../../../scripts/app.js";
+import { api } from "../../../scripts/api.js";
 
 const NODE_TYPE = "RandomImageFromDirectory_node";
+
+// Output slot indices that get inline value display.
+// Keys match what Python sends as flat ui dict keys.
+const DISPLAY_SLOTS = {
+    yfg_index_current:  2,
+    yfg_width:          4,
+    yfg_height:         5,
+    yfg_total_count:    7,
+    yfg_index_previous: 9,
+};
 
 console.log("[YFG] RandomImageFromDirectory JS extension loading…");
 
@@ -290,10 +301,67 @@ function openHistoryModal(onSelect) {
     render();
 }
 
+// ─────────────────────────── Output slot value display ───────────────────────
+
+// Update the display-enabled output slots with their current values.
+// Uses slot.label (display-only, not reset by ComfyUI) instead of slot.name.
+// Wrapped in setTimeout to run after ComfyUI's post-execution node refresh.
+function applyOutputValues(node, output) {
+    setTimeout(() => {
+        for (const [key, slotIdx] of Object.entries(DISPLAY_SLOTS)) {
+            const raw = output?.[key];
+            if (raw === undefined || raw === null) continue;
+
+            const value = Array.isArray(raw) ? raw[0] : raw;
+            if (value === undefined) continue;
+
+            const slot = node.outputs?.[slotIdx];
+            if (!slot) continue;
+
+            // origName: prefer stored name, else current label/name minus any prefix
+            let origName = node._yfgOrigOutputNames?.[slotIdx];
+            if (!origName) {
+                const src  = slot.label || slot.name || "";
+                const parts = src.split("  ");
+                origName = parts.length > 1 ? parts.slice(1).join("  ") : src;
+            }
+
+            const displayVal = (key === "yfg_index_previous" && value === -1) ? "-" : String(value);
+
+            // Set label (display override) — ComfyUI doesn't reset this
+            slot.label = `${displayVal}  ${origName}`;
+        }
+
+        // Force full canvas redraw
+        if (app.canvas?.draw) {
+            app.canvas.draw(true, true);
+        } else {
+            node.setDirtyCanvas(true, true);
+        }
+    }, 100);
+}
+
 // ─────────────────────────── ComfyUI Extension ───────────────────────────────
 
 app.registerExtension({
     name: "YFG.RandomImageFromDirectory",
+
+    // ── Listen for execution results and update output slot labels ────────────
+    async setup() {
+        api.addEventListener("executed", ({ detail }) => {
+            const nodeId = parseInt(detail.node ?? detail.nodeId);
+            if (isNaN(nodeId)) return;
+
+            const node = app.graph.getNodeById(nodeId);
+            if (!node) return;
+            if (node.type !== NODE_TYPE && node.comfyClass !== NODE_TYPE) return;
+
+            const output = detail?.output;
+            if (!output) return;
+
+            applyOutputValues(node, output);
+        });
+    },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name !== NODE_TYPE) return;
@@ -304,9 +372,12 @@ app.registerExtension({
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
+            const self   = this;
 
-            const self = this;
+            // ── Store original output names (once) for value prepending ───────
+            self._yfgOrigOutputNames = (self.outputs ?? []).map(o => o.name);
 
+            // ── Browse / Recent buttons ───────────────────────────────────────
             const dirWidget = self.widgets?.find(w => w.name === "image_directory");
             if (!dirWidget) {
                 console.warn("[YFG] image_directory widget not found on node.");
@@ -321,7 +392,6 @@ app.registerExtension({
                 app.graph.setDirtyCanvas(true, true);
             }
 
-            // Native LiteGraph button widgets — work in all ComfyUI versions
             self.addWidget(
                 "button",
                 "📁 Browse for Directory",

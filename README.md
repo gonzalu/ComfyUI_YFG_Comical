@@ -30,6 +30,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
     + [Random.org True Random Number](#randomorg-true-random-number)
     + [Random.org True Random Number (V2)](#randomorg-true-random-number-v2)
 	+ [Random Image From Directory](#random-image-from-directory)
+	+ [Display Value](#display-value)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
@@ -252,6 +253,9 @@ It also tracks previously selected images so you can compare “current” vs �
   - **📁 Browse for Directory** button opens a navigable server-side folder picker — no need to type paths manually.
   - **🕐 Recent Directories** button shows an MRU list of previously used directories for quick re-selection.
   - Used directories are saved automatically to `yfg_dir_history.json` on each run.
+- **Inline output value display**
+  - Key output values (`index_current`, `width`, `height`, `total_count`, `index_previous`) are shown directly on the output slots after each run — no external display nodes needed.
+  - ![Random Image From Directory Inline Display](img/RandomImageFromDirectoryWithInlineDisplay.png)
 - **Directory traversal**
   - Select only from the top folder, or include all subdirectories.
 - **Multiple selection modes**
@@ -323,6 +327,28 @@ It also tracks previously selected images so you can compare “current” vs �
 - **Session-lifetime uniqueness** resets when Python restarts.
 - **Directory history** is persisted to `yfg_dir_history.json` and survives restarts (max 50 entries).
 - **API limits**: Random.org quotas apply — check your dashboard.
+
+---
+
+### Display Value
+
+![YFG Display Value](img/YFGDisplayValue.png)
+
+A minimal utility node that displays any value — `INT`, `FLOAT`, or `STRING` — inline in both the node body and the title bar. Designed to replace large display nodes (like `ShowText` or `Display Int`) wherever a compact read-only indicator is all that's needed.
+
+#### ✨ Features
+- **Title bar display** — value shown as `value | label` so it's always visible even when the node is collapsed to its smallest size.
+- **In-body display** — green value rendered in the node body when expanded, no extra height added.
+- **Rename to label** — double-click the node title in ComfyUI to set a custom label (e.g. `Index`, `Width`, `Seed`). The value is appended automatically after each run.
+- **Any type** — accepts `INT`, `FLOAT`, or `STRING` on the single input slot via wildcard.
+- **Persistent** — last value is saved into the workflow JSON and pre-filled on reload.
+
+#### 🔧 Inputs
+- **`value`** *(any)* – The value to display.
+
+#### 📌 Notes
+- No outputs — this is a pure display/monitoring node.
+- The node title format is `value | label`. Rename the node to change the label; the value portion updates automatically on each run.
 
 ---
 

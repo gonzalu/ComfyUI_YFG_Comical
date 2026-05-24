@@ -455,9 +455,6 @@ class RandomImageFromDirectory:
     FUNCTION = "load"
     CATEGORY = "🐯 YFG/🖼️ Loaders"
 
-    _prev_index = -1
-    _prev_path = ""
-
     def _pick_random_index(self, n: int, src: str, min_idx: int, max_idx: int) -> int:
         if n <= 0:
             return 0
@@ -588,22 +585,11 @@ class RandomImageFromDirectory:
         if path is None:
             raise Exception("Could not select an image with the given parameters (possibly all candidates were recently used).")
 
+        # Load image once
         img = node_helpers.pillow(Image.open, str(path))
         img_tensor = pillow_to_tensor(img)
-
-
-        img = node_helpers.pillow(Image.open, str(path))
-        img_tensor = pillow_to_tensor(img)
-
-        # --- DEBUG: print shape/dtype/device to console ---
-        print("YFG RandomImageFromDirectory IMAGE:",
-              "dtype=", getattr(img_tensor, "dtype", None),
-              "device=", getattr(img_tensor, "device", None),
-              "shape=", getattr(img_tensor, "shape", None))
 
         # --- NORMALIZE to standard ComfyUI IMAGE: [B,H,W,3] float32 0..1, CPU, contiguous ---
-        import torch
-
         if not isinstance(img_tensor, torch.Tensor):
             img_tensor = torch.tensor(img_tensor)
 
@@ -621,22 +607,21 @@ class RandomImageFromDirectory:
         if img_tensor.dim() == 4 and img_tensor.shape[-1] == 4:
             img_tensor = img_tensor[..., :3]
 
-        # if animated / multi-frame, keep first frame only (optional but often fixes Resolution Master)
+        # if animated / multi-frame, keep first frame only
         if img_tensor.dim() == 4 and img_tensor.shape[0] > 1:
             img_tensor = img_tensor[:1]
 
         img_tensor = img_tensor.clamp(0.0, 1.0).contiguous().cpu()
 
-
-
-        # backward-compatible first 4
+        # Per-instance prev tracking — each node ID gets its own independent
+        # previous index/path. Using getattr avoids needing __init__.
         filename_path = str(path)
-        prev_index = RandomImageFromDirectory._prev_index
-        prev_path = RandomImageFromDirectory._prev_path
+        prev_index = getattr(self, '_prev_index', -1)
+        prev_path  = getattr(self, '_prev_path',  "")
 
-        # update session prev
-        RandomImageFromDirectory._prev_index = idx
-        RandomImageFromDirectory._prev_path = filename_path
+        # Update this instance's prev for the next run
+        self._prev_index = idx
+        self._prev_path  = filename_path
 
         w, h = img.size
         sha = image_sha256(path)
@@ -654,13 +639,21 @@ class RandomImageFromDirectory:
             int(prev_index),
         )
 
-        if show_preview:
-            # Save a temp PNG and publish standard ComfyUI preview metadata
-            fn, sub, typ = _save_temp_preview_png(img_tensor, prefix="yfg_randomdir")
-            return {"ui": {"images": [{"filename": fn, "subfolder": sub, "type": typ}]},
-                    "result": result}
+        # Values to display inline on each output slot in the UI.
+        # Each key is a tuple — standard ComfyUI ui dict pattern (same as {"text": (value,)})
+        ui_data = {
+            "yfg_index_current":  (int(idx),),
+            "yfg_width":          (int(w),),
+            "yfg_height":         (int(h),),
+            "yfg_total_count":    (int(total_count),),
+            "yfg_index_previous": (int(prev_index),),
+        }
 
-        return result
+        if show_preview:
+            fn, sub, typ = _save_temp_preview_png(img_tensor, prefix="yfg_randomdir")
+            ui_data["images"] = [{"filename": fn, "subfolder": sub, "type": typ}]
+
+        return {"ui": ui_data, "result": result}
 
     @classmethod
     def IS_CHANGED(cls, image_directory, include_subdirs, selection_mode, index, filename_query,

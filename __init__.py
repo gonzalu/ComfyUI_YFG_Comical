@@ -21,6 +21,7 @@ from .textMaskOverlay import TextMaskOverlay
 from .RandomOrg import RandomOrgTrueRandomNumber
 from .RandomOrgV2 import RandomOrgV2TrueRandomNumber
 from .RandomImageFromDirectory import RandomImageFromDirectory
+from .yfg_display_value import YFG_DisplayValue
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -44,6 +45,7 @@ NODE_CLASS_MAPPINGS = {
     "RandomOrgTrueRandomNumber_node": RandomOrgTrueRandomNumber,
     "RandomOrgV2TrueRandomNumber_node": RandomOrgV2TrueRandomNumber,
     "RandomImageFromDirectory_node": RandomImageFromDirectory,
+    "YFG_DisplayValue": YFG_DisplayValue,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -68,7 +70,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "RandomOrgTrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number",
     "RandomOrgV2TrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number (V2)",
     "RandomImageFromDirectory_node": "\ud83d\udc2f YFG Random Image From Directory",
+    "YFG_DisplayValue": "\ud83d\udc2f YFG Display Value",
 }
+
 WEB_DIRECTORY = "./web"
 print("------------------+-------------------") 
 print(f"\033[1;32m[YFG Comical]: 🐯 \033[93m\033[3m Loaded {len(NODE_CLASS_MAPPINGS)} nodes.\033[0m 🐯")
