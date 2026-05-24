@@ -3,19 +3,11 @@
 # Title       : YFG Display Value Node
 # Nickname    : yfg_display_value
 # Description : Displays any value (INT, FLOAT, STRING) in the node body and
-#               inline in the title bar. Rename node to set the label prefix.
-#               Follows the rgthree DisplayAny pattern for body display.
-# Version     : 1.1.0
+#               inline in the title bar. Three typed optional inputs ensure
+#               full compatibility with Use Everywhere (UE) broadcast nodes.
+#               Rename node to set the label prefix.
+# Version     : 1.2.0
 # =============================================================================
-
-
-class AnyType(str):
-    """Wildcard type — accepts any ComfyUI data type."""
-    def __ne__(self, __value: object) -> bool:
-        return False
-
-
-any_type = AnyType("*")
 
 
 class YFG_DisplayValue:
@@ -23,11 +15,14 @@ class YFG_DisplayValue:
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {
-                "value": (any_type,),
+            "required": {},
+            "optional": {
+                "int_value":    ("INT",    {"forceInput": True}),
+                "float_value":  ("FLOAT",  {"forceInput": True}),
+                "string_value": ("STRING", {"forceInput": True}),
             },
             "hidden": {
-                "unique_id":    "UNIQUE_ID",
+                "unique_id":     "UNIQUE_ID",
                 "extra_pnginfo": "EXTRA_PNGINFO",
             },
         }
@@ -36,17 +31,36 @@ class YFG_DisplayValue:
     FUNCTION     = "display"
     OUTPUT_NODE  = True
     CATEGORY     = "🐯 YFG"
-    DESCRIPTION  = "Displays any value in the node body and title bar. Rename to label."
+    DESCRIPTION  = (
+        "Displays INT, FLOAT, or STRING inline in the node title and body. "
+        "Connect whichever type you need — all three inputs are compatible "
+        "with Use Everywhere (UE) broadcast nodes. Rename to set the label."
+    )
 
-    def display(self, value, unique_id=None, extra_pnginfo=None):
-        text = str(value)
+    def display(self,
+                int_value=None,
+                float_value=None,
+                string_value=None,
+                unique_id=None,
+                extra_pnginfo=None):
 
-        # Save value into widgets_values so it pre-fills on workflow reload
-        # (same pattern as rgthree DisplayAny)
-        if extra_pnginfo and unique_id:
-            for node in (extra_pnginfo.get("workflow", {}).get("nodes", [])
-                         if isinstance(extra_pnginfo, dict)
-                         else []):
+        # Use whichever input is connected; priority: INT > FLOAT > STRING
+        if int_value is not None:
+            value = int_value
+        elif float_value is not None:
+            value = float_value
+        elif string_value is not None:
+            value = string_value
+        else:
+            value = None
+
+        text = str(value) if value is not None else ""
+
+        # Save into widgets_values so the value pre-fills on workflow reload
+        if text and extra_pnginfo and unique_id:
+            nodes = (extra_pnginfo.get("workflow", {}).get("nodes", [])
+                     if isinstance(extra_pnginfo, dict) else [])
+            for node in nodes:
                 if str(node.get("id")) == str(unique_id):
                     node["widgets_values"] = [text]
                     break
