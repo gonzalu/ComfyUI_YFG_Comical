@@ -10,7 +10,7 @@
  *
  * @author  Manny Gonzalez
  * @title   🐯 YFG Comical Nodes
- * @version 1.2.0
+ * @version 1.2.1
  */
 
 import { app } from "../../../scripts/app.js";
@@ -330,6 +330,13 @@ function applyOutputValues(node, output) {
 
             // Set label (display override) — ComfyUI doesn't reset this
             slot.label = `${displayVal}  ${origName}`;
+
+            // For index_current: also copy value into the INDEX input widget
+            // so switching to by_index needs no manual typing.
+            if (key === "yfg_index_current") {
+                const idxWidget = node.widgets?.find(w => w.name === "index");
+                if (idxWidget) idxWidget.value = value;
+            }
         }
 
         // Force full canvas redraw
