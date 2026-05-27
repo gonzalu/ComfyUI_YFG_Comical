@@ -223,7 +223,7 @@ class RandomOrgV2TrueRandomNumber:
         if not api_key:
             print("RandomOrgV2: No API key available. Create random_org_api_key.json or set RANDOM_ORG_API_KEY.")
             number = 0
-            return (number, float(number), int(number))
+            return {"ui": {"yfg_number": (number,), "yfg_float": (float(number),), "yfg_int": (int(number),)}, "result": (number, float(number), int(number))}
 
         # Normalize and validate bounds
         lo = int(minimum)
@@ -235,7 +235,7 @@ class RandomOrgV2TrueRandomNumber:
         # If mode is fixed, always return the minimum (deterministic)
         if mode == "fixed":
             number = lo
-            return (number, float(number), int(number))
+            return {"ui": {"yfg_number": (number,), "yfg_float": (float(number),), "yfg_int": (int(number),)}, "result": (number, float(number), int(number))}
 
         span = hi - lo + 1
 
@@ -243,7 +243,7 @@ class RandomOrgV2TrueRandomNumber:
         if (not ensure_unique) or span <= 1:
             nums = self._get_random_integers(api_key=api_key, amount=1, minimum=lo, maximum=hi)
             number = nums[0]
-            return (number, float(number), int(number))
+            return {"ui": {"yfg_number": (number,), "yfg_float": (float(number),), "yfg_int": (int(number),)}, "result": (number, float(number), int(number))}
 
         # ----------------------------
         # Uniqueness-enabled path
@@ -268,7 +268,7 @@ class RandomOrgV2TrueRandomNumber:
                     tries += 1
 
             self._remember(candidate, (lo, hi), unique_scope, history_size)
-            return (candidate, float(candidate), int(candidate))
+            return {"ui": {"yfg_number": (candidate,), "yfg_float": (float(candidate),), "yfg_int": (int(candidate),)}, "result": (candidate, float(candidate), int(candidate))}
 
         # Fallback: history-based de-dup (kept for very large ranges)
         key = (lo, hi)
@@ -278,11 +278,11 @@ class RandomOrgV2TrueRandomNumber:
             candidate = nums[0]
             if not self._is_duplicate(candidate, key, unique_scope, history_size, time_window_sec):
                 self._remember(candidate, key, unique_scope, history_size)
-                return (candidate, float(candidate), int(candidate))
+                return {"ui": {"yfg_number": (candidate,), "yfg_float": (float(candidate),), "yfg_int": (int(candidate),)}, "result": (candidate, float(candidate), int(candidate))}
 
         print("RandomOrgV2: Retry limit reached while avoiding duplicates; emitting last value.")
         self._remember(candidate, key, unique_scope, history_size)
-        return (candidate, float(candidate), int(candidate))
+        return {"ui": {"yfg_number": (candidate,), "yfg_float": (float(candidate),), "yfg_int": (int(candidate),)}, "result": (candidate, float(candidate), int(candidate))}
 
     # --- Internal helpers ---
     def _get_random_integers(self, api_key: str, amount: int, minimum: int, maximum: int) -> List[int]:

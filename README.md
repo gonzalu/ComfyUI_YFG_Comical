@@ -30,6 +30,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
     + [Random.org True Random Number](#randomorg-true-random-number)
     + [Random.org True Random Number (V2)](#randomorg-true-random-number-v2)
 	+ [Random Image From Directory](#random-image-from-directory)
+	+ [Random Prompt From File](#random-prompt-from-file)
 	+ [Display Value](#display-value)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
@@ -326,6 +327,88 @@ It also tracks previously selected images so you can compare “current” vs �
 - **Current vs previous outputs** make it easy to compare selections.
 - **Session-lifetime uniqueness** resets when Python restarts.
 - **Directory history** is persisted to `yfg_dir_history.json` and survives restarts (max 50 entries).
+- **API limits**: Random.org quotas apply — check your dashboard.
+
+---
+
+### Random Prompt From File
+
+![YFG Random Prompt From File](img/YFGRadomPromptFromFile.png)
+
+Selects a single prompt entry from a `.txt` prompt file using true random.org numbers (or local PRNG). Outputs `positive`, `negative`, and `name` text directly — no additional nodes or wiring required.
+
+#### ✨ Features
+- **Built-in file browser**
+  - **📄 Browse for File** button opens a navigable server-side file picker showing directories and `.txt` files, with a live prompt count badge per file.
+  - **🕐 Recent Files** button shows an MRU list of previously used files for quick re-selection.
+  - Used files are saved automatically to `yfg_file_history.json` on each run.
+- **Auto range population**
+  - `range_start` and `range_end` fill automatically (0 and total−1) whenever a file is selected — no manual entry needed.
+- **Last-N toggle**
+  - `last_n_only` restricts the random pool to the last N entries in the file — ideal when new prompts are appended to the bottom and you want to pick only from the newest additions.
+- **Inline output value display**
+  - `index_current`, `index_previous`, and `total_count` are shown directly on the output slots after each run.
+- **INDEX auto-sync**
+  - The INDEX widget updates automatically after every run so switching to `by_index` mode requires no manual typing.
+- **True random.org integration**
+  - Uses the same Random.org API key as the Random Number nodes — no separate setup needed.
+- **Uniqueness filtering**
+  - Avoids repeating prompts within a session with configurable history size and time window.
+- **Shuffle bag**
+  - Cycles through all prompts in the pool before repeating, then reshuffles — guarantees uniform coverage.
+
+#### 📄 Prompt File Format
+
+```
+positive: your positive prompt here
+
+negative: ugly, deformed, watermark
+
+----
+positive: second prompt
+
+negative:
+
+name: Optional Label
+----
+```
+
+- Entries separated by any number of hyphens (`-`, `--`, `----`) on their own line
+- `negative:` content may be empty
+- `name:` is optional — defaults to the filename stem
+- Leading/trailing separator lines are silently ignored
+- UTF-8 encoding required
+
+#### 🔧 Input Parameters
+- **`prompt_file`** *(string)* – Path to the `.txt` prompt file. Use **📄 Browse** or **🕐 Recent** buttons.
+- **`selection_mode`** *(choice, default: random)* – `random` picks from `range_start`..`range_end`; `by_index` uses the INDEX widget directly.
+- **`index`** *(int)* – Used when `selection_mode=by_index`. Auto-syncs after every run.
+- **`range_start`** *(int, default: 0)* – First prompt index in the random pool. Auto-fills to 0 when a file is selected.
+- **`range_end`** *(int, default: 0)* – Last prompt index in the random pool. Auto-fills to total−1 when a file is selected. 0 = last prompt.
+- **`last_n_only`** *(bool, default: False)* – When ON, restricts the pool to the last N entries only.
+- **`last_n_count`** *(int, default: 100)* – How many entries from the end to include when `last_n_only` is ON.
+- **`random_source`** *(choice, default: auto)* – `auto`, `local`, or `random_org`.
+- **`ensure_unique`** *(bool, default: True)* – Avoid repeating prompts within a session.
+- **`history_size`** *(int, default: 100)* – How many recent indices to track for uniqueness.
+- **`time_window_sec`** *(int, default: 0)* – Forget entries older than this many seconds.
+- **`retry_limit`** *(int, default: 20)* – Max attempts before falling back to last candidate.
+- **`use_shuffle_bag`** *(bool, default: True)* – Cycle through all prompts before repeating, then reshuffle.
+
+#### 🖥️ Outputs
+1. **`positive`** – Positive prompt text.
+2. **`negative`** – Negative prompt text (empty string if not specified in file).
+3. **`name`** – Prompt name from the `name:` field, or filename stem if omitted.
+4. **`index_current`** – 0-based index of the selected prompt. Auto-syncs to INDEX widget.
+5. **`index_previous`** – Index of the prompt selected in the previous run this session.
+6. **`total_count`** – Total number of valid prompts found in the file.
+
+#### 🔑 Random.org Setup (optional)
+Uses the same `random_org_api_key.json` file as the Random Number nodes — see [Random.org True Random Number (V2)](#randomorg-true-random-number-v2) for setup instructions.
+
+#### 📌 Notes
+- **Session-lifetime uniqueness** resets when Python restarts.
+- **File history** is persisted to `yfg_file_history.json` and survives restarts (max 20 entries).
+- **File cache** — parsed prompt files are cached in memory keyed by modification time. Re-parsing only occurs when the file changes on disk — zero overhead on repeat runs.
 - **API limits**: Random.org quotas apply — check your dashboard.
 
 ---

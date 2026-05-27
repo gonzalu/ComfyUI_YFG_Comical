@@ -22,6 +22,7 @@ from .RandomOrg import RandomOrgTrueRandomNumber
 from .RandomOrgV2 import RandomOrgV2TrueRandomNumber
 from .RandomImageFromDirectory import RandomImageFromDirectory
 from .yfg_display_value import YFG_DisplayValue
+from .YFGRandomPromptFromFile import YFGRandomPromptFromFile
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -46,6 +47,7 @@ NODE_CLASS_MAPPINGS = {
     "RandomOrgV2TrueRandomNumber_node": RandomOrgV2TrueRandomNumber,
     "RandomImageFromDirectory_node": RandomImageFromDirectory,
     "YFG_DisplayValue": YFG_DisplayValue,
+    "YFGRandomPromptFromFile_node": YFGRandomPromptFromFile,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -71,6 +73,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "RandomOrgV2TrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number (V2)",
     "RandomImageFromDirectory_node": "\ud83d\udc2f YFG Random Image From Directory",
     "YFG_DisplayValue": "\ud83d\udc2f YFG Display Value",
+    "YFGRandomPromptFromFile_node": "\ud83d\udc2f YFG Random Prompt From File",
 }
 
 WEB_DIRECTORY = "./web"
