@@ -32,6 +32,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
 	+ [Random Image From Directory](#random-image-from-directory)
 	+ [Random Prompt From File](#random-prompt-from-file)
 	+ [Display Value](#display-value)
+	+ [CivitAI MetaSave](#civitai-metasave)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
@@ -77,7 +78,7 @@ Example (side-by-side instead of split):
 
 ![Image to imgBB](img/image2imgbb.png)
 
-Upload and download images to/from [imgBB](https://www.imgbb.com/). Includes nodes for downloading images and a URL “storage” node that keeps the original link alongside the workflow.
+Upload and download images to/from [imgBB](https://www.imgbb.com/). Includes nodes for downloading images and a URL "storage" node that keeps the original link alongside the workflow.
 
 #### Setup
 
@@ -95,7 +96,7 @@ Obtain a key at <https://api.imgbb.com/>.
 
 ![Smart Checkpoint Loader](img/smartCheckpointLoader.png)
 
-Drop-in replacement for the core “Load Checkpoint,” but flattens complex directory trees so checkpoints appear as if in a single folder — ideal for sharing workflows.
+Drop-in replacement for the core "Load Checkpoint," but flattens complex directory trees so checkpoints appear as if in a single folder — ideal for sharing workflows.
 
 ### Mono Clip
 
@@ -154,7 +155,7 @@ Example [workflow JSON](workflows/ComfyUI_YFG_Comical-Text-Mask-Overlay-Workflow
 
 ![switchers](img/switchers.png)
 
-Multi-input image switchers (3, 5, 10, 15, 20 inputs). Provide a routing matrix, inline preview, and graceful handling of missing inputs (with user warnings). Designed to avoid “ganged” switcher confusion in complex workflows.
+Multi-input image switchers (3, 5, 10, 15, 20 inputs). Provide a routing matrix, inline preview, and graceful handling of missing inputs (with user warnings). Designed to avoid "ganged" switcher confusion in complex workflows.
 
 ![switchers](img/switchers03.png)
 ![switchers](img/switchers05.png)
@@ -164,7 +165,7 @@ Multi-input image switchers (3, 5, 10, 15, 20 inputs). Provide a routing matrix,
 
 ![random-number](img/RandomOrgTrueRandomNumber.png)
 
-Modified version of the WAS node (original wasn’t functioning). Requires a [Random.org](https://www.random.org/) account and [API key](https://api.random.org/dashboard).
+Modified version of the WAS node (original wasn't functioning). Requires a [Random.org](https://www.random.org/) account and [API key](https://api.random.org/dashboard).
 
 *Based on original code by WASasquatch.*
 
@@ -247,7 +248,7 @@ Integrates with the [random.org JSON-RPC API](https://api.random.org/json-rpc/2/
 
 This node selects a single image from a given directory (with optional recursion into subdirectories).  
 It supports **true randomness** (via Random.org integration if configured) or deterministic selection by index/filename.  
-It also tracks previously selected images so you can compare “current” vs “previous” outputs.
+It also tracks previously selected images so you can compare "current" vs "previous" outputs.
 
 #### ✨ Features
 - **Built-in directory browser**
@@ -435,6 +436,61 @@ A minimal utility node that displays any value — `INT`, `FLOAT`, or `STRING` �
 
 ---
 
+### CivitAI MetaSave
+
+![YFG CivitAI MetaSave](img/YFGCivitAIMetaSave.png)
+
+Saves images with full **A1111-compatible metadata** embedded so that [CivitAI](https://civitai.com/) automatically recognizes and displays generation info — model, LoRA weights, embeddings, sampler settings, seed, and prompts — exactly as it does for Automatic1111 outputs.
+
+A single node replaces the two-node workflow required by other metadata extensions. Four optional custom key/value extra-metadata pairs are built directly into the node — no helper nodes required.
+
+Compatible with classic SD (KSampler, KSamplerAdvanced), Flux, SD3, Ideogram, SamplerCustomAdvanced, LoRA, and upscale workflows.
+
+#### ✨ Features
+- **CivitAI auto-recognition** — embeds the `parameters` text chunk that CivitAI parses for resources, prompts, and settings, identical to A1111 output.
+- **Multi-format output** — PNG, JPEG, or WebP, each with an optional sidecar workflow JSON.
+- **EXIF embedding** — JPEG and WebP outputs also receive EXIF UserComment metadata so CivitAI can read them regardless of format.
+- **Model & resource hashing** — SHA-256 hashes (first 10 hex chars) for checkpoint, VAE, LoRA, and embedding files are computed and cached on disk to avoid redundant re-hashing.
+- **LoRA detection** — finds LoRA weights from both LoraLoader nodes and inline `<lora:name:weight>` syntax in the prompt text.
+- **Filename tokens** — supports `%date:yyyy-MM-dd%`, `%seed%`, `%model%`, `%pprompt:32%`, `%nprompt:32%`, `%width%`, `%height%` in the filename prefix.
+- **Subdirectory support** — optional sub-folder creation inside the output directory, also supporting date tokens.
+- **Metadata scope control** — choose what gets embedded: full, default, parameters only, workflow only, or none.
+- **Four inline extra metadata slots** — attach custom key/value pairs (e.g. workflow name, prompt index, project tag) without any additional nodes.
+
+#### 🔧 Input Parameters
+- **`images`** *(IMAGE)* – Images to save.
+- **`filename_prefix`** *(string, default: `ComfyUI`)* – Output filename prefix. Supports tokens: `%date:yyyy-MM-dd%`, `%seed%`, `%model%`, `%pprompt:32%`, `%nprompt:32%`, `%width%`, `%height%`.
+- **`subdirectory_name`** *(string)* – Optional sub-folder inside the output directory. Supports `%date%` tokens. Leave blank to use the default output folder.
+- **`output_format`** *(choice, default: `png_with_json`)* – Image format. The `*_with_json` variants also write a sidecar `.json` workflow file.
+  - `png` / `png_with_json`
+  - `jpg` / `jpg_with_json`
+  - `webp` / `webp_with_json`
+- **`quality`** *(choice, default: `max`)* – Output quality level. Ignored for PNG.
+  - `max` — 100 (lossless WebP)
+  - `high` — 80
+  - `medium` — 60
+  - `low` — 30
+- **`metadata_scope`** *(choice, default: `full`)* – Controls what metadata is embedded.
+  - `full` — A1111 parameters string + full ComfyUI workflow JSON
+  - `default` — same as the built-in SaveImage node
+  - `parameters_only` — A1111-style parameters string only
+  - `workflow_only` — ComfyUI workflow JSON only
+  - `none` — no metadata
+- **`include_batch_num`** *(bool, default: `false`)* – Append a 5-digit batch index to the filename when saving multiple images.
+- **`prefer_nearest`** *(bool, default: `true`)* – When multiple upstream nodes provide the same field, prefer the one closest (fewest graph hops) to this node.
+- **`extra_key1`** / **`extra_value1`** *(string, optional)* – Custom metadata key/value pair 1.
+- **`extra_key2`** / **`extra_value2`** *(string, optional)* – Custom metadata key/value pair 2.
+- **`extra_key3`** / **`extra_value3`** *(string, optional)* – Custom metadata key/value pair 3.
+- **`extra_key4`** / **`extra_value4`** *(string, optional)* – Custom metadata key/value pair 4.
+
+#### 📌 Notes
+- **`piexif`** must be installed (`pip install piexif`). It is listed as a dependency in `pyproject.toml` and should install automatically via ComfyUI Manager.
+- **Hash cache** is stored in `civitai_metasave/.cache/model_hash_cache.json`. Hashes are computed once per file and reused on subsequent runs — no performance penalty after the first generation.
+- **Steps are required** for full metadata. If no Steps value is found upstream, the parameters string is skipped and a warning is printed to the console. This is a CivitAI requirement, not a bug.
+- **Workflow attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden. Maintained and extended independently as part of YFG Comical.
+
+---
+
 ## Examples
 
 ### Sample Workflow
@@ -460,5 +516,6 @@ Huge thanks to creators whose work inspires or integrates with these nodes:
 - [Akatsuzi](https://github.com/Suzie1)
 - [chrisgoringe](https://github.com/chrisgoringe/cg-use-everywhere)
 - [pythongosssss](https://github.com/pythongosssss)
+- [edelvarden](https://github.com/edelvarden/comfyui_image_metadata_extension)
 
 …and many others. Thank you for your talent and generosity.
