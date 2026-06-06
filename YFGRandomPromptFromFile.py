@@ -395,6 +395,8 @@ class YFGRandomPromptFromFile:
         "0-based index of the selected prompt. Auto-syncs to INDEX widget.",
         "Index of the previously selected prompt this session.",
         "Total number of valid prompts found in the file.",
+        "Full path to the selected prompt file.",
+        "Filename only (no path) of the selected prompt file.",
     )
 
     @classmethod
@@ -470,9 +472,10 @@ class YFGRandomPromptFromFile:
             }
         }
 
-    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT", "STRING", "STRING")
     RETURN_NAMES  = ("positive", "negative", "name",
-                     "index_current", "index_previous", "total_count")
+                     "index_current", "index_previous", "total_count",
+                     "file_path", "file_name")
     FUNCTION      = "load_prompt"
     CATEGORY      = "🐯 YFG/📝 Prompts"
 
@@ -531,18 +534,24 @@ class YFGRandomPromptFromFile:
         self._prev_index = idx
         _FileHistory.add(prompt_file)
 
+        file_path = str(Path(prompt_file).resolve())
+        file_name = Path(prompt_file).name
+
         print(
             f"[YFG] RandomPromptFromFile v{NODE_VERSION}: "
-            f"idx={idx}/{total - 1}  name={name}"
+            f"idx={idx}/{total - 1}  name={name}  file={file_name}"
         )
 
-        result = (positive, negative, name, int(idx), int(prev_idx), int(total))
+        result = (positive, negative, name, int(idx), int(prev_idx), int(total),
+                  file_path, file_name)
 
         return {
             "ui": {
                 "yfg_pf_index_current":  (int(idx),),
                 "yfg_pf_index_previous": (int(prev_idx),),
                 "yfg_pf_total_count":    (int(total),),
+                "yfg_pf_file_name":      (file_name,),
+                "yfg_pf_file_path":      (file_path,),
             },
             "result": result,
         }

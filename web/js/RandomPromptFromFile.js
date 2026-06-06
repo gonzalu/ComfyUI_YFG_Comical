@@ -1,5 +1,5 @@
 /**
- * YFG Random Prompt From File — UI Extension v1.1.0
+ * YFG Random Prompt From File — UI Extension v1.2.0
  *
  * Adds to YFGRandomPromptFromFile_node:
  *   📄 Browse for File    — navigable file picker showing dirs + .txt files
@@ -8,12 +8,15 @@
  *   Output slot display   — index_current, index_previous, total_count live values
  *   INDEX auto-sync       — INDEX widget mirrors index_current after every run
  *
+ * v1.2.0: Widget shows filename only (full path on hover tooltip).
+ *         Recent Files picker shows two-line layout: filename (green) +
+ *         directory path (dimmed) for instant disambiguation of long paths.
  * v1.1.0: Simplified inputs, fixed badge fetch abort on file select,
  *         added range_start/range_end auto-populate on file selection.
  *
  * @author  Manny Gonzalez
  * @title   🐯 YFG Comical Nodes
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 import { app } from "../../../scripts/app.js";
@@ -26,6 +29,8 @@ const DISPLAY_SLOTS = {
     yfg_pf_index_current:  3,
     yfg_pf_index_previous: 4,
     yfg_pf_total_count:    5,
+    yfg_pf_file_name:      7,   // filename shown on slot, full path on tooltip
+    yfg_pf_file_path:      6,   // full path — slot label kept short
 };
 
 console.log("[YFG] RandomPromptFromFile JS extension loading…");
@@ -136,9 +141,16 @@ function ensureStyles() {
 }
 .yfg-history-item:hover        { background: #313244; }
 .yfg-history-item:last-of-type { border-bottom: none; }
-.yfg-history-label {
-    flex: 1; overflow: hidden; text-overflow: ellipsis;
-    white-space: nowrap; color: #a6e3a1; font-size: 12px;
+.yfg-history-info {
+    flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;
+}
+.yfg-history-filename {
+    color: #a6e3a1; font-size: 13px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.yfg-history-dirpath {
+    color: #6c7086; font-size: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .yfg-history-del {
     flex-shrink: 0; color: #f38ba8; cursor: pointer;
@@ -360,18 +372,31 @@ function openRecentFilesModal(onSelect) {
             }
 
             for (const filepath of history) {
-                const row   = el("div", "yfg-history-item");
-                const label = el("span", "yfg-history-label", filepath);
-                const del   = el("span", "yfg-history-del", "✕");
-                label.title  = filepath;
-                label.onclick = () => { onSelect(filepath); overlay.remove(); };
+                // Split into filename (green, bold) + directory path (dim)
+                const sep      = filepath.includes("\\") ? "\\" : "/";
+                const lastSep  = Math.max(filepath.lastIndexOf("\\"), filepath.lastIndexOf("/"));
+                const filename = lastSep >= 0 ? filepath.slice(lastSep + 1) : filepath;
+                const dirpath  = lastSep >= 0 ? filepath.slice(0, lastSep)  : "";
+
+                const row      = el("div", "yfg-history-item");
+                const info     = el("div", "yfg-history-info");
+                const nameSpan = el("span", "yfg-history-filename", filename);
+                const dirSpan  = el("span", "yfg-history-dirpath",  dirpath);
+                const del      = el("span", "yfg-history-del", "✕");
+
+                // Full path on tooltip for both spans
+                nameSpan.title = filepath;
+                dirSpan.title  = filepath;
+                info.append(nameSpan, dirSpan);
+
+                info.onclick = () => { onSelect(filepath); overlay.remove(); };
                 del.title    = "Remove from history";
                 del.onclick  = async ev => {
                     ev.stopPropagation();
                     await apiPost("/yfg/file_history/remove", { filepath });
                     render();
                 };
-                row.append(label, del);
+                row.append(info, del);
                 listWrap.append(row);
             }
 
@@ -391,7 +416,16 @@ function openRecentFilesModal(onSelect) {
 
 // ─────────────────────────── Output slot value display ───────────────────────
 
+// Max chars to show for filename on the slot label before truncating
+const MAX_FNAME_DISPLAY = 28;
+
 function applyOutputValues(node, output) {
+    // Grab the full path early so file_name slot can use it as tooltip
+    const filePathRaw  = output?.["yfg_pf_file_path"];
+    const fullFilePath = filePathRaw
+        ? (Array.isArray(filePathRaw) ? filePathRaw[0] : filePathRaw)
+        : null;
+
     setTimeout(() => {
         for (const [key, slotIdx] of Object.entries(DISPLAY_SLOTS)) {
             const raw = output?.[key];
@@ -410,8 +444,27 @@ function applyOutputValues(node, output) {
                 origName = parts.length > 1 ? parts.slice(1).join("  ") : src;
             }
 
-            const displayVal = (key === "yfg_pf_index_previous" && value === -1) ? "-" : String(value);
-            slot.label = `${displayVal}  ${origName}`;
+            if (key === "yfg_pf_file_name") {
+                // Show truncated filename on the slot label (same style as numbers)
+                // Full path goes on the slot tooltip for hover reference
+                const fname = String(value);
+                const displayFname = fname.length > MAX_FNAME_DISPLAY
+                    ? fname.slice(0, MAX_FNAME_DISPLAY - 1) + "…"
+                    : fname;
+                slot.label   = `${displayFname}  ${origName}`;
+                slot.tooltip = fullFilePath || fname;
+
+            } else if (key === "yfg_pf_file_path") {
+                // file_path slot: keep label as just the slot name,
+                // tooltip shows the full path
+                slot.label   = origName;
+                slot.tooltip = String(value);
+
+            } else {
+                const displayVal = (key === "yfg_pf_index_previous" && value === -1)
+                    ? "-" : String(value);
+                slot.label = `${displayVal}  ${origName}`;
+            }
 
             // Sync INDEX widget from index_current
             if (key === "yfg_pf_index_current") {
@@ -470,6 +523,10 @@ app.registerExtension({
                 return result;
             }
 
+            // The full path is stored in fileWidget.value and sent to Python.
+            // The filename is displayed on the file_name output slot (slot 7)
+            // after each run, matching the style of the numeric output slots.
+
             // Wrap the widget callback so range auto-populates whenever
             // the file path changes (Browse, Recent, or manual typing)
             const _origCallback = fileWidget.callback;
@@ -481,7 +538,11 @@ app.registerExtension({
             };
 
             function applyFile(selectedPath) {
-                fileWidget.value = selectedPath;
+                fileWidget.value   = selectedPath;
+                // Show full path on hover — updates both the ComfyUI tooltip
+                // property and the DOM element title if accessible
+                fileWidget.tooltip = selectedPath;
+                if (fileWidget.element) fileWidget.element.title = selectedPath;
                 // Trigger callback → auto-populates range
                 if (typeof fileWidget.callback === "function") {
                     fileWidget.callback(selectedPath);
