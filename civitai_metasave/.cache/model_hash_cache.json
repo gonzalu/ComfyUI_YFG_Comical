@@ -1,0 +1,10 @@
+{
+  "flux2-vae.safetensors": {
+    "file_hash": "d64f3a68e1",
+    "file_modification_date": 1768670388.9622734
+  },
+  "flux-2-klein-9b-kv-fp8.safetensors": {
+    "file_hash": "33f7da5625",
+    "file_modification_date": 1773345620.5623274
+  }
+}

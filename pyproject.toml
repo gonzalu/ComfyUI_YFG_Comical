@@ -1,9 +1,9 @@
 [project]
 name = "comfyui_yfg_comical"
 description = "Utility custom nodes for special effects, image manipulation and quality of life tools."
-version = "1.6.0"
+version = "1.7.0"
 license = "LICENSE"
-dependencies = ["transformers", "typer", "typing-extensions"]
+dependencies = ["transformers", "typer", "typing-extensions", "piexif"]
 
 [project.urls]
 Repository = "https://github.com/gonzalu/ComfyUI_YFG_Comical"

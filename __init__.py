@@ -23,6 +23,7 @@ from .RandomOrgV2 import RandomOrgV2TrueRandomNumber
 from .RandomImageFromDirectory import RandomImageFromDirectory
 from .yfg_display_value import YFG_DisplayValue
 from .YFGRandomPromptFromFile import YFGRandomPromptFromFile
+from .civitai_metasave import YFG_CivitAI_MetaSave
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -34,7 +35,7 @@ NODE_CLASS_MAPPINGS = {
     "Image10Switcher_node": Image10SwitcherNode,
     "Image15Switcher_node": Image15SwitcherNode,
     "Image20Switcher_node": Image20SwitcherNode,
-    "image2imbgg_node": Image2ImgBB,    
+    "image2imbgg_node": Image2ImgBB,
     "imgbbLoader_node": ImgbbLoader,
     "storeURL_node": storeURL,
     "smartCheckpointLoader_node": SmartCheckpointLoader,
@@ -48,35 +49,37 @@ NODE_CLASS_MAPPINGS = {
     "RandomImageFromDirectory_node": RandomImageFromDirectory,
     "YFG_DisplayValue": YFG_DisplayValue,
     "YFGRandomPromptFromFile_node": YFGRandomPromptFromFile,
+    "YFG_CivitAI_MetaSave": YFG_CivitAI_MetaSave,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "image_histograms_node": "\ud83d\udc2f YFG Histograms Generator",
-    "image_histograms_node_compact": "\ud83d\udc2f YFG Histograms Generator (compact)",
-    "image_halftone": "\ud83d\udc2f YFG Image Halftone Generator",
-    "images_side_by_side": "\ud83d\udc2f YFG Image Side by Side",
-    "Image3Switcher_node": "\ud83d\udc2f YFG 3 Image Switcher",
-    "Image5Switcher_node": "\ud83d\udc2f YFG 5 Image Switcher",
-    "Image10Switcher_node": "\ud83d\udc2f YFG 10 Image Switcher",
-    "Image15Switcher_node": "\ud83d\udc2f YFG 15 Image Switcher",
-    "Image20Switcher_node": "\ud83d\udc2f YFG 20 Image Switcher",
-    "image2imbgg_node": "\ud83d\udc2f YFG Image to imgBB",
-    "imgbbLoader_node": "\ud83d\udc2f YFG imgBB to Image",
-    "storeURL_node": "\ud83d\udc2f YFG Store URL",    
-    "smartCheckpointLoader_node": "\ud83d\udc2f YFG Smart Checkpoint Loader",
-    "image2contrastMask_node": "\ud83d\udc2f YFG Image To Contrast Mask",
-    "VAEDecodePreview_node": "\ud83d\udc2f YFG VAE Decode with Preview",
-    "MonoClip_node": "\ud83d\udc2f YFG Monochrome Image Clip",
-    "PixelArt_node": "\ud83d\udc2f YFG PixelArt",
-    "textMaskOverlay_node": "\ud83d\udc2f YFG Text Mask Overlay",
-    "RandomOrgTrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number",
-    "RandomOrgV2TrueRandomNumber_node": "\ud83d\udc2f YFG Random.org True Random Number (V2)",
-    "RandomImageFromDirectory_node": "\ud83d\udc2f YFG Random Image From Directory",
-    "YFG_DisplayValue": "\ud83d\udc2f YFG Display Value",
-    "YFGRandomPromptFromFile_node": "\ud83d\udc2f YFG Random Prompt From File",
+    "image_histograms_node": "\U0001f42f YFG Histograms Generator",
+    "image_histograms_node_compact": "\U0001f42f YFG Histograms Generator (compact)",
+    "image_halftone": "\U0001f42f YFG Image Halftone Generator",
+    "images_side_by_side": "\U0001f42f YFG Image Side by Side",
+    "Image3Switcher_node": "\U0001f42f YFG 3 Image Switcher",
+    "Image5Switcher_node": "\U0001f42f YFG 5 Image Switcher",
+    "Image10Switcher_node": "\U0001f42f YFG 10 Image Switcher",
+    "Image15Switcher_node": "\U0001f42f YFG 15 Image Switcher",
+    "Image20Switcher_node": "\U0001f42f YFG 20 Image Switcher",
+    "image2imbgg_node": "\U0001f42f YFG Image to imgBB",
+    "imgbbLoader_node": "\U0001f42f YFG imgBB to Image",
+    "storeURL_node": "\U0001f42f YFG Store URL",
+    "smartCheckpointLoader_node": "\U0001f42f YFG Smart Checkpoint Loader",
+    "image2contrastMask_node": "\U0001f42f YFG Image To Contrast Mask",
+    "VAEDecodePreview_node": "\U0001f42f YFG VAE Decode with Preview",
+    "MonoClip_node": "\U0001f42f YFG Monochrome Image Clip",
+    "PixelArt_node": "\U0001f42f YFG PixelArt",
+    "textMaskOverlay_node": "\U0001f42f YFG Text Mask Overlay",
+    "RandomOrgTrueRandomNumber_node": "\U0001f42f YFG Random.org True Random Number",
+    "RandomOrgV2TrueRandomNumber_node": "\U0001f42f YFG Random.org True Random Number (V2)",
+    "RandomImageFromDirectory_node": "\U0001f42f YFG Random Image From Directory",
+    "YFG_DisplayValue": "\U0001f42f YFG Display Value",
+    "YFGRandomPromptFromFile_node": "\U0001f42f YFG Random Prompt From File",
+    "YFG_CivitAI_MetaSave": "\U0001f42f YFG CivitAI MetaSave",
 }
 
 WEB_DIRECTORY = "./web"
-print("------------------+-------------------") 
+print("------------------+-------------------")
 print(f"\033[1;32m[YFG Comical]: 🐯 \033[93m\033[3m Loaded {len(NODE_CLASS_MAPPINGS)} nodes.\033[0m 🐯")
 print("------------------+-------------------")
