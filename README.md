@@ -487,7 +487,8 @@ Compatible with classic SD (KSampler, KSamplerAdvanced), Flux, SD3, Ideogram, Sa
 - **`piexif`** must be installed (`pip install piexif`). It is listed as a dependency in `pyproject.toml` and should install automatically via ComfyUI Manager.
 - **Hash cache** is stored in `civitai_metasave/.cache/model_hash_cache.json`. Hashes are computed once per file and reused on subsequent runs — no performance penalty after the first generation.
 - **Steps are required** for full metadata. If no Steps value is found upstream, the parameters string is skipped and a warning is printed to the console. This is a CivitAI requirement, not a bug.
-- **Workflow attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden. Maintained and extended independently as part of YFG Comical.
+- **Workflow attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden which itself was a fork of [ComfyUI-SaveImageWithMetaData](
+nkchocoai/ComfyUI-SaveImageWithMetaData). Maintained and extended independently as part of YFG Comical.
 
 ---
 
