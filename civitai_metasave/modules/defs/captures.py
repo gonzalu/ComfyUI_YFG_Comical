@@ -6,6 +6,16 @@
 #               fields they contribute, with optional format functions and
 #               validators. Covers classic SD, Flux, SD3, Ideogram, LoRA,
 #               upscale, and embedding workflows.
+#
+# Changelog
+# ---------
+# v1.7.2  Add Power Lora Loader (rgthree) support via selector functions.
+#         rgthree's node stores LoRAs as lora_1..N dicts with {on, lora,
+#         strength} rather than standard lora_name/strength_model widgets,
+#         so it was silently skipped by the field-name capture path.
+#         Active entries (on=True) are now enumerated, hashed, and reported
+#         correctly in CivitAI metadata. Resolves missing LoRA hashes for
+#         any workflow using Power Lora Loader (rgthree).
 # =============================================================================
 
 from .meta import MetaField
