@@ -16,6 +16,12 @@
 #
 #               Compatible with classic SD, KSampler, KSamplerAdvanced, Flux,
 #               SD3, Ideogram, SamplerCustomAdvanced, and LoRA workflows.
+#
+# Fix (2026-06-15): results[subfolder] now uses os.path.relpath() so the
+#               ComfyUI /view? URL receives a proper relative subfolder
+#               instead of the full absolute Windows path, which was causing
+#               Chromium-based browsers (Chrome, Edge) to produce malformed
+#               drag-and-drop source URLs.
 # =============================================================================
 
 import json
@@ -396,15 +402,20 @@ class YFG_CivitAI_MetaSave:
         filename_prefix   = self._format_filename(filename_prefix, pnginfo_dict, segments) + self.prefix_append
         subdirectory_name = self._format_filename(subdirectory_name, pnginfo_dict)
 
-        # Determine output folder
+        # Determine output folder.
+        # get_save_image_path() handles the slash in filename_prefix as a subfolder
+        # automatically and returns a correct relative `subfolder` string.
         image_shape = images[0].shape
         full_output_folder, filename, counter, subfolder, filename_prefix = \
             folder_paths.get_save_image_path(
                 filename_prefix, self.output_dir, image_shape[1], image_shape[0]
             )
 
+        # If a separate subdirectory_name was supplied, override the folder
+        # and recompute the relative subfolder for the /view? URL.
         if subdirectory_name:
             full_output_folder = os.path.join(self.output_dir, subdirectory_name)
+            subfolder          = subdirectory_name
             filename           = filename_prefix
 
         os.makedirs(full_output_folder, exist_ok=True)
@@ -457,9 +468,14 @@ class YFG_CivitAI_MetaSave:
                 })
                 piexif.insert(exif_bytes, path)
 
+            # FIX: use the relative `subfolder` string, not the absolute
+            # full_output_folder path. ComfyUI's /view? endpoint expects a
+            # path relative to the output directory, and passing an absolute
+            # Windows path was producing malformed URLs that Chromium-based
+            # browsers (Chrome, Edge) rejected for drag-and-drop operations.
             results.append({
                 "filename": file,
-                "subfolder": full_output_folder,
+                "subfolder": subfolder,
                 "type":     self.type,
             })
 
