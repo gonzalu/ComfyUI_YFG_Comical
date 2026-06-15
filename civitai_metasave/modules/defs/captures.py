@@ -29,6 +29,36 @@ from .formatters import (
 )
 
 
+# =============================================================================
+# Selector helpers for Power Lora Loader (rgthree)
+#
+# rgthree's Power Lora Loader stores LoRAs as lora_1, lora_2, ... dict inputs
+# with the structure: {"on": bool, "lora": "path/name.safetensors", "strength": float}
+# rather than the standard lora_name / strength_model widget fields used by
+# ComfyUI's built-in LoraLoader.  We use selector functions so get_inputs()
+# can extract multiple active LoRA entries from a single node pass.
+# =============================================================================
+
+def _power_lora_active_entries(obj):
+    """Return a list of active lora entry dicts from a Power Lora Loader node."""
+    entries = []
+    for key, val in obj.get("inputs", {}).items():
+        if key.startswith("lora_") and isinstance(val, dict) and val.get("on", False):
+            lora_path = val.get("lora")
+            if lora_path:
+                entries.append(val)
+    return entries
+
+def _power_lora_names(node_id, obj, prompt, extra_data, outputs, input_data):
+    return [e["lora"] for e in _power_lora_active_entries(obj)]
+
+def _power_lora_hashes(node_id, obj, prompt, extra_data, outputs, input_data):
+    return [calc_lora_hash(e["lora"]) for e in _power_lora_active_entries(obj)]
+
+def _power_lora_strengths(node_id, obj, prompt, extra_data, outputs, input_data):
+    return [e.get("strength", 1.0) for e in _power_lora_active_entries(obj)]
+
+
 CAPTURE_FIELD_LIST = {
     # ---------------------------------------------------------
     # Core: base checkpoint / model loading
@@ -119,7 +149,7 @@ CAPTURE_FIELD_LIST = {
     },
 
     # ---------------------------------------------------------
-    # LoRA
+    # LoRA — standard ComfyUI built-in nodes
     # ---------------------------------------------------------
     "LoraLoader": {
         MetaField.LORA_MODEL_NAME:     {"field_name": "lora_name"},
@@ -133,6 +163,21 @@ CAPTURE_FIELD_LIST = {
         MetaField.LORA_MODEL_HASH:     {"field_name": "lora_name", "format": calc_lora_hash},
         MetaField.LORA_STRENGTH_MODEL: {"field_name": "strength_model"},
         MetaField.LORA_STRENGTH_CLIP:  {"value": 0},
+    },
+
+    # ---------------------------------------------------------
+    # LoRA — rgthree Power Lora Loader
+    #
+    # This node stores LoRAs as lora_1..lora_N dicts rather than
+    # individual lora_name widgets, so selector functions are
+    # used to iterate all active (on=True) entries per node pass.
+    # Multiple Power Lora Loader nodes in a workflow are each
+    # processed in turn, accumulating all active LoRAs.
+    # ---------------------------------------------------------
+    "Power Lora Loader (rgthree)": {
+        MetaField.LORA_MODEL_NAME:     {"selector": _power_lora_names},
+        MetaField.LORA_MODEL_HASH:     {"selector": _power_lora_hashes},
+        MetaField.LORA_STRENGTH_MODEL: {"selector": _power_lora_strengths},
     },
 
     # ---------------------------------------------------------
@@ -167,9 +212,9 @@ CAPTURE_FIELD_LIST = {
     },
 
     "BasicScheduler": {
-        MetaField.STEPS:    {"field_name": "steps"},
-        MetaField.SCHEDULER:{"field_name": "scheduler"},
-        MetaField.DENOISE:  {"field_name": "denoise"},
+        MetaField.STEPS:     {"field_name": "steps"},
+        MetaField.SCHEDULER: {"field_name": "scheduler"},
+        MetaField.DENOISE:   {"field_name": "denoise"},
     },
 
     "BetaSamplingScheduler": {

@@ -6,5 +6,17 @@
   "flux-2-klein-9b-kv-fp8.safetensors": {
     "file_hash": "33f7da5625",
     "file_modification_date": 1773345620.5623274
+  },
+  "flux-2-klein-9b-kv.safetensors": {
+    "file_hash": "cbf07a8a1f",
+    "file_modification_date": 1773345937.577878
+  },
+  "YFG-FutureIsDark-Flux2-Klein-9B-Base-v1_750.safetensors": {
+    "file_hash": "a8e8a97224",
+    "file_modification_date": 1769960497.8588374
+  },
+  "YFG-Smorgas-F2_K9B_3k-v2.safetensors": {
+    "file_hash": "8c353efbf1",
+    "file_modification_date": 1781373175.7145333
   }
 }
