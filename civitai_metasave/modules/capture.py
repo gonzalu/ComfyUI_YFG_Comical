@@ -50,19 +50,30 @@ class OutputCacheCompat:
     def _sync_lookup(self, input_unique_id, unique_id=None):
         cache = self._cache
 
-        # ComfyUI 0.17+ synchronous accessor
+        # ComfyUI 0.17+ synchronous accessor — get_local() is the sync path.
+        # IMPORTANT: check result is not None before returning; a None result
+        # means the node wasn't found in cache, not a valid empty value.
+        # Also try int key: ComfyUI may key the cache by int internally even
+        # when the API prompt uses string node IDs.
         get_local = getattr(cache, "get_local", None)
         if callable(get_local):
             result = get_local(input_unique_id)
-            if not self._is_coroutine_like(result):
+            if not self._is_coroutine_like(result) and result is not None:
                 return result
+            try:
+                int_id = int(input_unique_id)
+                result = get_local(int_id)
+                if not self._is_coroutine_like(result) and result is not None:
+                    return result
+            except (ValueError, TypeError):
+                pass
 
         if hasattr(cache, "get_output_cache"):
             try:
                 result = cache.get_output_cache(input_unique_id, unique_id)
             except TypeError:
                 result = cache.get_output_cache(input_unique_id)
-            if not self._is_coroutine_like(result):
+            if not self._is_coroutine_like(result) and result is not None:
                 return result
 
         if hasattr(cache, "get_cache"):
@@ -70,7 +81,7 @@ class OutputCacheCompat:
                 result = cache.get_cache(input_unique_id, unique_id)
             except TypeError:
                 result = cache.get_cache(input_unique_id)
-            if not self._is_coroutine_like(result):
+            if not self._is_coroutine_like(result) and result is not None:
                 return result
 
         if isinstance(cache, dict):

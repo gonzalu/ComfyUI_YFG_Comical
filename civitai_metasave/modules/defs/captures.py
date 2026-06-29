@@ -9,26 +9,23 @@
 #
 # Changelog
 # ---------
+# v1.7.5  Fix _qwen_is_nonempty / _qwen_is_empty validator signatures.
+#         The validate() contract is (node_id, obj, prompt, extra_data,
+#         outputs, input_data) where the second arg is the RAW NODE DICT,
+#         not the field value. Previous version mistakenly treated obj as
+#         the text value, so isinstance(obj, str) was always False and the
+#         validator always returned False, blocking all prompt capture.
+#         Corrected validators now read input_data[0].get("prompt") to get
+#         the runtime-resolved text value.
+#
 # v1.7.4  Fix TextEncodeQwenImageEditPlus prompt capture in workflows using
-#         SetNode/GetNode routing. The is_positive_prompt validator traces the
-#         conditioning graph and dead-ends at SetNode (no outgoing links), so
-#         it was rejecting valid positive prompts. Since Krea2 workflows always
-#         use an empty string for the negative, content-based disambiguation is
-#         sufficient: non-empty = positive, empty = skipped.
+#         SetNode/GetNode routing. The is_positive_prompt validator traces
+#         the conditioning graph and dead-ends at SetNode, rejecting valid
+#         positive prompts. Replaced with content-based validators.
 #
 # v1.7.3  Add TextEncodeQwenImageEditPlus support (Krea2 / Qwen VLM encoder).
-#         Krea2 workflows use this node instead of CLIPTextEncode, with the
-#         prompt in a field named "prompt" rather than "text". Without this
-#         entry the extension captures trigger words only and misses the
-#         actual positive/negative prompt entirely.
 #
 # v1.7.2  Add Power Lora Loader (rgthree) support via selector functions.
-#         rgthree's node stores LoRAs as lora_1..N dicts with {on, lora,
-#         strength} rather than standard lora_name/strength_model widgets,
-#         so it was silently skipped by the field-name capture path.
-#         Active entries (on=True) are now enumerated, hashed, and reported
-#         correctly in CivitAI metadata. Resolves missing LoRA hashes for
-#         any workflow using Power Lora Loader (rgthree).
 # =============================================================================
 
 from .meta import MetaField
@@ -57,7 +54,6 @@ from .formatters import (
 # =============================================================================
 
 def _power_lora_active_entries(obj):
-    """Return a list of active lora entry dicts from a Power Lora Loader node."""
     entries = []
     for key, val in obj.get("inputs", {}).items():
         if key.startswith("lora_") and isinstance(val, dict) and val.get("on", False):
@@ -77,25 +73,37 @@ def _power_lora_strengths(node_id, obj, prompt, extra_data, outputs, input_data)
 
 
 # =============================================================================
-# Selector helpers for TextEncodeQwenImageEditPlus (Krea2)
+# Validators for TextEncodeQwenImageEditPlus (Krea2)
 #
-# Krea2 workflows route conditioning through SetNode/GetNode pairs, which
-# breaks the is_positive_prompt graph-traversal validator (it dead-ends at
-# the SetNode and rejects valid positives). Since Krea2 always leaves the
-# negative as an empty string, we discriminate by content: non-empty text is
-# the positive prompt; empty text is silently skipped by the extension.
+# The validate() contract is:
+#   (node_id, obj, prompt_dict, extra_data, outputs, input_data)
+# where obj is the RAW NODE DICT {"inputs":{...}, "class_type":"..."}.
+# To check the actual resolved prompt text we must read input_data[0].
+#
+# SetNode/GetNode routing breaks is_positive_prompt's graph traversal so
+# we use content-based validators instead: non-empty = positive, empty = negative.
 # =============================================================================
 
-def _qwen_is_nonempty(node_id, value, prompt, extra_data, outputs, input_data):
-    """Accept only non-empty, non-whitespace strings as the positive prompt."""
+def _qwen_is_nonempty(node_id, obj, prompt_dict, extra_data, outputs, input_data):
+    """Positive: True when the runtime-resolved prompt text is non-empty."""
+    try:
+        value = input_data[0].get("prompt")
+    except (TypeError, IndexError, AttributeError):
+        return False
     if isinstance(value, list):
-        value = value[0] if value else ""
+        value = value[0] if value else None
     return isinstance(value, str) and value.strip() != ""
 
-def _qwen_is_empty(node_id, value, prompt, extra_data, outputs, input_data):
-    """Accept only empty strings as the negative prompt."""
+def _qwen_is_empty(node_id, obj, prompt_dict, extra_data, outputs, input_data):
+    """Negative: True when the runtime-resolved prompt text is empty or absent."""
+    try:
+        value = input_data[0].get("prompt")
+    except (TypeError, IndexError, AttributeError):
+        return True  # no data = treat as empty = potential negative slot
     if isinstance(value, list):
-        value = value[0] if value else ""
+        value = value[0] if value else None
+    if value is None:
+        return True
     return isinstance(value, str) and value.strip() == ""
 
 
@@ -149,10 +157,6 @@ CAPTURE_FIELD_LIST = {
 
     # ---------------------------------------------------------
     # Prompts / CLIP — Krea2 / Qwen VLM encoder
-    #
-    # Uses "prompt" field name (not "text").
-    # No is_positive_prompt validator — SetNode/GetNode routing
-    # breaks graph traversal. Content-based validators used instead.
     # ---------------------------------------------------------
     "TextEncodeQwenImageEditPlus": {
         MetaField.POSITIVE_PROMPT: {
@@ -253,7 +257,7 @@ CAPTURE_FIELD_LIST = {
     },
 
     # ---------------------------------------------------------
-    # Flux / SD3 / Ideogram – model + schedulers + helpers
+    # Flux / SD3 / Ideogram — model + schedulers + helpers
     # ---------------------------------------------------------
     "UNETLoader": {
         MetaField.MODEL_NAME: {
