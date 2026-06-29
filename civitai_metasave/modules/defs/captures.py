@@ -9,6 +9,12 @@
 #
 # Changelog
 # ---------
+# v1.7.3  Add TextEncodeQwenImageEditPlus support (Krea2 / Qwen VLM encoder).
+#         Krea2 workflows use this node instead of CLIPTextEncode, with the
+#         prompt in a field named "prompt" rather than "text". Without this
+#         entry the extension captures trigger words only and misses the
+#         actual positive/negative prompt entirely.
+#
 # v1.7.2  Add Power Lora Loader (rgthree) support via selector functions.
 #         rgthree's node stores LoRAs as lora_1..N dicts with {on, lora,
 #         strength} rather than standard lora_name/strength_model widgets,
@@ -96,7 +102,7 @@ CAPTURE_FIELD_LIST = {
     },
 
     # ---------------------------------------------------------
-    # Prompts / CLIP
+    # Prompts / CLIP — standard encoder
     # ---------------------------------------------------------
     "CLIPTextEncode": {
         MetaField.POSITIVE_PROMPT: {
@@ -113,6 +119,34 @@ CAPTURE_FIELD_LIST = {
         },
         MetaField.EMBEDDING_HASH: {
             "field_name": "text",
+            "format": extract_embedding_hashes,
+        },
+    },
+
+    # ---------------------------------------------------------
+    # Prompts / CLIP — Krea2 / Qwen VLM encoder
+    #
+    # TextEncodeQwenImageEditPlus is Krea2's multimodal text+image
+    # encoder. It uses "prompt" as the text field name instead of
+    # "text", and is the ONLY active conditioner in Krea2 workflows
+    # (CLIPTextEncode nodes are muted). Without this entry the
+    # extension captures trigger words but misses the actual prompt.
+    # ---------------------------------------------------------
+    "TextEncodeQwenImageEditPlus": {
+        MetaField.POSITIVE_PROMPT: {
+            "field_name": "prompt",
+            "validate": is_positive_prompt,
+        },
+        MetaField.NEGATIVE_PROMPT: {
+            "field_name": "prompt",
+            "validate": is_distinct_negative_prompt,
+        },
+        MetaField.EMBEDDING_NAME: {
+            "field_name": "prompt",
+            "format": extract_embedding_names,
+        },
+        MetaField.EMBEDDING_HASH: {
+            "field_name": "prompt",
             "format": extract_embedding_hashes,
         },
     },
