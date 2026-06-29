@@ -9,6 +9,13 @@
 #
 # Changelog
 # ---------
+# v1.7.4  Fix TextEncodeQwenImageEditPlus prompt capture in workflows using
+#         SetNode/GetNode routing. The is_positive_prompt validator traces the
+#         conditioning graph and dead-ends at SetNode (no outgoing links), so
+#         it was rejecting valid positive prompts. Since Krea2 workflows always
+#         use an empty string for the negative, content-based disambiguation is
+#         sufficient: non-empty = positive, empty = skipped.
+#
 # v1.7.3  Add TextEncodeQwenImageEditPlus support (Krea2 / Qwen VLM encoder).
 #         Krea2 workflows use this node instead of CLIPTextEncode, with the
 #         prompt in a field named "prompt" rather than "text". Without this
@@ -47,12 +54,6 @@ from .formatters import (
 
 # =============================================================================
 # Selector helpers for Power Lora Loader (rgthree)
-#
-# rgthree's Power Lora Loader stores LoRAs as lora_1, lora_2, ... dict inputs
-# with the structure: {"on": bool, "lora": "path/name.safetensors", "strength": float}
-# rather than the standard lora_name / strength_model widget fields used by
-# ComfyUI's built-in LoraLoader.  We use selector functions so get_inputs()
-# can extract multiple active LoRA entries from a single node pass.
 # =============================================================================
 
 def _power_lora_active_entries(obj):
@@ -73,6 +74,29 @@ def _power_lora_hashes(node_id, obj, prompt, extra_data, outputs, input_data):
 
 def _power_lora_strengths(node_id, obj, prompt, extra_data, outputs, input_data):
     return [e.get("strength", 1.0) for e in _power_lora_active_entries(obj)]
+
+
+# =============================================================================
+# Selector helpers for TextEncodeQwenImageEditPlus (Krea2)
+#
+# Krea2 workflows route conditioning through SetNode/GetNode pairs, which
+# breaks the is_positive_prompt graph-traversal validator (it dead-ends at
+# the SetNode and rejects valid positives). Since Krea2 always leaves the
+# negative as an empty string, we discriminate by content: non-empty text is
+# the positive prompt; empty text is silently skipped by the extension.
+# =============================================================================
+
+def _qwen_is_nonempty(node_id, value, prompt, extra_data, outputs, input_data):
+    """Accept only non-empty, non-whitespace strings as the positive prompt."""
+    if isinstance(value, list):
+        value = value[0] if value else ""
+    return isinstance(value, str) and value.strip() != ""
+
+def _qwen_is_empty(node_id, value, prompt, extra_data, outputs, input_data):
+    """Accept only empty strings as the negative prompt."""
+    if isinstance(value, list):
+        value = value[0] if value else ""
+    return isinstance(value, str) and value.strip() == ""
 
 
 CAPTURE_FIELD_LIST = {
@@ -126,20 +150,18 @@ CAPTURE_FIELD_LIST = {
     # ---------------------------------------------------------
     # Prompts / CLIP — Krea2 / Qwen VLM encoder
     #
-    # TextEncodeQwenImageEditPlus is Krea2's multimodal text+image
-    # encoder. It uses "prompt" as the text field name instead of
-    # "text", and is the ONLY active conditioner in Krea2 workflows
-    # (CLIPTextEncode nodes are muted). Without this entry the
-    # extension captures trigger words but misses the actual prompt.
+    # Uses "prompt" field name (not "text").
+    # No is_positive_prompt validator — SetNode/GetNode routing
+    # breaks graph traversal. Content-based validators used instead.
     # ---------------------------------------------------------
     "TextEncodeQwenImageEditPlus": {
         MetaField.POSITIVE_PROMPT: {
             "field_name": "prompt",
-            "validate": is_positive_prompt,
+            "validate": _qwen_is_nonempty,
         },
         MetaField.NEGATIVE_PROMPT: {
             "field_name": "prompt",
-            "validate": is_distinct_negative_prompt,
+            "validate": _qwen_is_empty,
         },
         MetaField.EMBEDDING_NAME: {
             "field_name": "prompt",
@@ -211,12 +233,6 @@ CAPTURE_FIELD_LIST = {
 
     # ---------------------------------------------------------
     # LoRA — rgthree Power Lora Loader
-    #
-    # This node stores LoRAs as lora_1..lora_N dicts rather than
-    # individual lora_name widgets, so selector functions are
-    # used to iterate all active (on=True) entries per node pass.
-    # Multiple Power Lora Loader nodes in a workflow are each
-    # processed in turn, accumulating all active LoRAs.
     # ---------------------------------------------------------
     "Power Lora Loader (rgthree)": {
         MetaField.LORA_MODEL_NAME:     {"selector": _power_lora_names},
