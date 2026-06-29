@@ -50,11 +50,12 @@ class OutputCacheCompat:
     def _sync_lookup(self, input_unique_id, unique_id=None):
         cache = self._cache
 
-        # ComfyUI 0.17+ synchronous accessor — get_local() is the sync path.
-        # IMPORTANT: check result is not None before returning; a None result
-        # means the node wasn't found in cache, not a valid empty value.
-        # Also try int key: ComfyUI may key the cache by int internally even
-        # when the API prompt uses string node IDs.
+        # ComfyUI 0.17+ synchronous accessor.
+        # CRITICAL: check result is not None before returning — a None result
+        # means the node was not found in cache, not a valid empty value.
+        # Returning None early blocks all subsequent fallbacks.
+        # Also try integer key: ComfyUI may store cache entries by int
+        # even when the API prompt uses string node IDs.
         get_local = getattr(cache, "get_local", None)
         if callable(get_local):
             result = get_local(input_unique_id)
