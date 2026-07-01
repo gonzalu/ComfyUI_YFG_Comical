@@ -47,6 +47,24 @@ class OutputCacheCompat:
     def _is_coroutine_like(value):
         return hasattr(value, "__await__")
 
+    @staticmethod
+    def _close_coroutine(result):
+        """
+        Close an un-awaited coroutine to suppress Python's
+        'coroutine was never awaited' RuntimeWarning.
+
+        When we call an async cache method synchronously (without await),
+        Python creates a coroutine object.  We detect it via _is_coroutine_like
+        and discard it, but Python GC will emit a RuntimeWarning if the
+        coroutine is never explicitly closed.  Calling .close() here tells the
+        coroutine to clean up immediately and silences the warning.
+        """
+        try:
+            if hasattr(result, "close"):
+                result.close()
+        except Exception:
+            pass
+
     def _sync_lookup(self, input_unique_id, unique_id=None):
         cache = self._cache
 
@@ -56,15 +74,21 @@ class OutputCacheCompat:
         # Returning None early blocks all subsequent fallbacks.
         # Also try integer key: ComfyUI may store cache entries by int
         # even when the API prompt uses string node IDs.
+        # NOTE: whenever _is_coroutine_like() is True we call _close_coroutine()
+        # before discarding the result, to suppress RuntimeWarning from GC.
         get_local = getattr(cache, "get_local", None)
         if callable(get_local):
             result = get_local(input_unique_id)
-            if not self._is_coroutine_like(result) and result is not None:
+            if self._is_coroutine_like(result):
+                self._close_coroutine(result)
+            elif result is not None:
                 return result
             try:
                 int_id = int(input_unique_id)
                 result = get_local(int_id)
-                if not self._is_coroutine_like(result) and result is not None:
+                if self._is_coroutine_like(result):
+                    self._close_coroutine(result)
+                elif result is not None:
                     return result
             except (ValueError, TypeError):
                 pass
@@ -74,7 +98,9 @@ class OutputCacheCompat:
                 result = cache.get_output_cache(input_unique_id, unique_id)
             except TypeError:
                 result = cache.get_output_cache(input_unique_id)
-            if not self._is_coroutine_like(result) and result is not None:
+            if self._is_coroutine_like(result):
+                self._close_coroutine(result)
+            elif result is not None:
                 return result
 
         if hasattr(cache, "get_cache"):
@@ -82,7 +108,9 @@ class OutputCacheCompat:
                 result = cache.get_cache(input_unique_id, unique_id)
             except TypeError:
                 result = cache.get_cache(input_unique_id)
-            if not self._is_coroutine_like(result) and result is not None:
+            if self._is_coroutine_like(result):
+                self._close_coroutine(result)
+            elif result is not None:
                 return result
 
         if isinstance(cache, dict):
@@ -97,6 +125,7 @@ class OutputCacheCompat:
             try:
                 result = get_fn(input_unique_id)
                 if self._is_coroutine_like(result):
+                    self._close_coroutine(result)
                     return None
                 return result
             except Exception:
