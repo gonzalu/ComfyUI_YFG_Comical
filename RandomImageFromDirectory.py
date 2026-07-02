@@ -234,7 +234,36 @@ try:
     from server import PromptServer
     from aiohttp import web as _web
 
+    # ── remote-access guard for /yfg/* routes ─────────────────────────────
+    # These endpoints expose directory browsing. By default they only
+    # answer requests from the local machine (loopback). Users who run
+    # ComfyUI with --listen and genuinely want LAN access to the directory
+    # browser can opt in by creating an empty file named
+    # "yfg_allow_remote.json" next to this script.
+    _YFG_ALLOW_REMOTE_FLAG = Path(__file__).with_name("yfg_allow_remote.json")
+
+    def _yfg_remote_allowed(request) -> bool:
+        if _YFG_ALLOW_REMOTE_FLAG.exists():
+            return True
+        peer = request.remote  # aiohttp peer IP string, or None (unix socket)
+        if peer is None:
+            return True
+        return peer == "::1" or peer.startswith("127.")
+
+    def _yfg_local_only(handler):
+        """Decorator: reject non-loopback requests with 403 unless opted in."""
+        async def _guarded(request):
+            if not _yfg_remote_allowed(request):
+                return _web.json_response(
+                    {"error": "This endpoint is restricted to localhost. "
+                              "Create yfg_allow_remote.json next to "
+                              "RandomImageFromDirectory.py to allow remote access."},
+                    status=403)
+            return await handler(request)
+        return _guarded
+
     @PromptServer.instance.routes.get("/yfg/dir_browse")
+    @_yfg_local_only
     async def _yfg_dir_browse(request):
         path_param = request.rel_url.query.get("path", "").strip()
 
@@ -270,10 +299,12 @@ try:
         return _web.json_response({"path": str(p), "parent": parent, "dirs": dirs})
 
     @PromptServer.instance.routes.get("/yfg/dir_history")
+    @_yfg_local_only
     async def _yfg_dir_history_get(request):
         return _web.json_response(_read_history())
 
     @PromptServer.instance.routes.post("/yfg/dir_history/remove")
+    @_yfg_local_only
     async def _yfg_dir_history_remove(request):
         body = await request.json()
         directory = body.get("directory", "")
@@ -282,6 +313,7 @@ try:
         return _web.json_response({"ok": True})
 
     @PromptServer.instance.routes.post("/yfg/dir_history/clear")
+    @_yfg_local_only
     async def _yfg_dir_history_clear(request):
         _write_history([])
         return _web.json_response({"ok": True})

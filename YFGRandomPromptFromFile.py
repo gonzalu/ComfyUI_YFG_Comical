@@ -219,11 +219,41 @@ try:
     from server import PromptServer
     from aiohttp import web as _aio_web
 
+    # ── remote-access guard for /yfg/* routes ─────────────────────────────
+    # These endpoints expose filesystem browsing. By default they only
+    # answer requests from the local machine (loopback). Users who run
+    # ComfyUI with --listen and genuinely want LAN access to the file
+    # browser can opt in by creating an empty file named
+    # "yfg_allow_remote.json" next to this script.
+    _YFG_ALLOW_REMOTE_FLAG = Path(__file__).with_name("yfg_allow_remote.json")
+
+    def _yfg_remote_allowed(request) -> bool:
+        if _YFG_ALLOW_REMOTE_FLAG.exists():
+            return True
+        peer = request.remote  # aiohttp peer IP string, or None (unix socket)
+        if peer is None:
+            return True
+        return peer == "::1" or peer.startswith("127.")
+
+    def _yfg_local_only(handler):
+        """Decorator: reject non-loopback requests with 403 unless opted in."""
+        async def _guarded(request):
+            if not _yfg_remote_allowed(request):
+                return _aio_web.json_response(
+                    {"error": "This endpoint is restricted to localhost. "
+                              "Create yfg_allow_remote.json next to "
+                              "YFGRandomPromptFromFile.py to allow remote access."},
+                    status=403)
+            return await handler(request)
+        return _guarded
+
     @PromptServer.instance.routes.get("/yfg/file_history")
+    @_yfg_local_only
     async def _yfg_get_file_history(request):
         return _aio_web.json_response(_FileHistory.get())
 
     @PromptServer.instance.routes.post("/yfg/file_history/add")
+    @_yfg_local_only
     async def _yfg_add_file_history(request):
         data     = await request.json()
         filepath = data.get("filepath", "").strip()
@@ -232,6 +262,7 @@ try:
         return _aio_web.json_response({"ok": True, "history": _FileHistory.get()})
 
     @PromptServer.instance.routes.post("/yfg/file_history/remove")
+    @_yfg_local_only
     async def _yfg_remove_file_history(request):
         data     = await request.json()
         filepath = data.get("filepath", "").strip()
@@ -240,11 +271,13 @@ try:
         return _aio_web.json_response({"ok": True, "history": _FileHistory.get()})
 
     @PromptServer.instance.routes.post("/yfg/file_history/clear")
+    @_yfg_local_only
     async def _yfg_clear_file_history(request):
         _FileHistory.clear()
         return _aio_web.json_response({"ok": True})
 
     @PromptServer.instance.routes.get("/yfg/file_browse")
+    @_yfg_local_only
     async def _yfg_browse_files(request):
         """Navigator that returns both subdirectories and .txt files."""
         path        = request.query.get("path", "").strip()
@@ -299,6 +332,7 @@ try:
             return _aio_web.json_response({"error": str(e)}, status=500)
 
     @PromptServer.instance.routes.get("/yfg/prompt_count")
+    @_yfg_local_only
     async def _yfg_prompt_count(request):
         """Returns total valid prompt count for a file (uses parse cache)."""
         filepath = request.query.get("path", "").strip()
