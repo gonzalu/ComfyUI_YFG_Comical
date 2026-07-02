@@ -221,7 +221,8 @@ function openBrowseModal(startPath, onSelect) {
             for (const d of data.dirs) {
                 const row = el("div", "yfg-dir-item");
                 row.title = d.path;
-                row.innerHTML = `<span>📁</span><span class="yfg-dir-name">${d.name}</span>`;
+                row.innerHTML = `<span>📁</span><span class="yfg-dir-name"></span>`;
+                row.querySelector(".yfg-dir-name").textContent = d.name;
                 row.onclick   = () => navigate(d.path);
                 listWrap.append(row);
             }
