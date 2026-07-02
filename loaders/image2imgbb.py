@@ -131,7 +131,7 @@ class Image2ImgBB:
         return output_image, output_mask
 
     def load_image_from_url(self, url):
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True, timeout=15)
         response.raise_for_status()
         img = node_helpers.pillow(Image.open(BytesIO(response.content)))
 
@@ -197,7 +197,7 @@ class Image2ImgBB:
         }
 
         try:
-            response = requests.post(url, files=files, data=payload)
+            response = requests.post(url, files=files, data=payload, timeout=30)
             response.raise_for_status()
             result = response.json()
             print("API Response:", json.dumps(result, indent=2))

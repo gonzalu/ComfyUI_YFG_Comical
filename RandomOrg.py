@@ -78,7 +78,8 @@ class RandomOrgTrueRandomNumber:
         response = requests.post(
             "https://api.random.org/json-rpc/2/invoke",
             headers={"Content-Type": "application/json"},
-            data=json.dumps(payload)
+            data=json.dumps(payload),
+            timeout=10
         )
         if response.status_code == 200:
             data = response.json()
