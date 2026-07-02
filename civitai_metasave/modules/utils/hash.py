@@ -12,7 +12,6 @@ import threading
 import os
 import json
 from collections import OrderedDict
-from functools import lru_cache
 
 from ..config import NODE_CACHE_DIR
 from .log import print_warning, print_error
@@ -35,7 +34,6 @@ if os.path.exists(CACHE_FILE):
         _disk_cache = {}
 
 
-@lru_cache(maxsize=100)
 def get_file_mod_time(path):
     try:
         return os.path.getmtime(path)
