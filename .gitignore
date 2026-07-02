@@ -2,3 +2,6 @@ __pycache__
 /pycache/*
 loaders/imgbb_api_key.json
 random_org_api_key.json
+yfg_dir_history.json
+yfg_file_history.json
+civitai_metasave/.cache/
