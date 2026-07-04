@@ -490,6 +490,29 @@ Compatible with classic SD (KSampler, KSamplerAdvanced), Flux, SD3, Ideogram, Sa
 - **Workflow attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden which itself was a fork of [ComfyUI-SaveImageWithMetaData](
 nkchocoai/ComfyUI-SaveImageWithMetaData). Maintained and extended independently as part of YFG Comical.
 
+### Live Preview Panel
+
+![YFG Live Preview Panel](img/YFGLivePreview.png)
+
+A floating, draggable **live preview window** that mirrors the KSampler preview so you can watch generation progress from anywhere in your workflow — no more panning back and forth to the sampler node to check on a render or catch a bad generation early.
+
+This is a pure frontend extension — it has **no node**, no inputs, and no outputs. It simply appears as a floating panel over the canvas, similar to ComfyUI's built-in minimap. Under the hood it listens to the same websocket events (`progress` and `b_preview`) that drive the KSampler's own inline preview, so it adds zero backend overhead.
+
+#### ✨ Features
+- **Live preview image** — updates in real time as the sampler works, exactly like the in-node preview.
+- **Progress bar & step counter** — shows `step N / M (%)` for the currently executing node.
+- **Executing node indicator** — displays the title and ID of whichever node is currently running (e.g. `▶ KSampler (#53)`).
+- **🛑 Cancel button** — interrupts the current generation from anywhere, without touching the sampler node.
+- **Drag & resize** — move it by the header, resize from the bottom-right grip. Position and size are remembered between sessions.
+- **Collapse & hide** — `—` collapses to just the title bar; `✕` hides the panel (it reappears automatically on the next run).
+- **Keyboard toggle** — **`Alt+Shift+L`** shows/hides the panel at any time.
+- **Settings switch** — a master on/off toggle in ComfyUI Settings (search for "YFG"): **🐯 Enable Live Preview panel**. When off, the panel never appears, even during generations.
+
+#### 📌 Notes
+- Previews require ComfyUI's preview generation to be enabled (the default). If you launch ComfyUI with `--preview-method none`, the panel will still show progress and the executing node, but no image.
+- The panel auto-appears whenever a generation starts (unless disabled in Settings). If you close it with `✕`, it comes back on the next run — or press `Alt+Shift+L` to bring it back immediately.
+- The hotkey deliberately avoids `Alt+Shift+P`, which is reserved by Microsoft Edge for tab grouping.
+
 ---
 
 ## Examples
