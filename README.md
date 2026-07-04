@@ -33,6 +33,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
 	+ [Random Prompt From File](#random-prompt-from-file)
 	+ [Display Value](#display-value)
 	+ [CivitAI MetaSave](#civitai-metasave)
+	+ [Live Preview Panel](#live-preview-panel)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
