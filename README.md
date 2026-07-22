@@ -34,6 +34,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
 	+ [Display Value](#display-value)
 	+ [CivitAI MetaSave](#civitai-metasave)
 	+ [Live Preview Panel](#live-preview-panel)
+	+ [Power Lora Loader Extras](#power-lora-loader-extras)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
@@ -513,6 +514,34 @@ This is a pure frontend extension — it has **no node**, no inputs, and no outp
 - Previews require ComfyUI's preview generation to be enabled (the default). If you launch ComfyUI with `--preview-method none`, the panel will still show progress and the executing node, but no image.
 - The panel auto-appears whenever a generation starts (unless disabled in Settings). If you close it with `✕`, it comes back on the next run — or press `Alt+Shift+L` to bring it back immediately.
 - The hotkey deliberately avoids `Alt+Shift+P`, which is reserved by Microsoft Edge for tab grouping.
+
+---
+
+### Power Lora Loader Extras
+
+*(companion enhancement, no new node)*
+
+![Power Lora Loader Extras menu](img/YFG-PLL-Companion.png)
+
+A pure frontend enhancement for rgthree's **Power Lora Loader (rgthree)** node — adds sort, bulk strength control, randomization, and drag-and-drop reordering directly to its own right-click menu. No new node type, nothing to wire up: just right-click any Power Lora Loader on your canvas.
+
+#### ✨ Features
+- **🐯 YFG: Sort Loras** — reorder the lora list by Name (A-Z/Z-A), Strength (High-Low/Low-High), or Enabled First.
+- **🐯 YFG: Nudge All Strengths** — bump every lora's strength up or down in sync (`+0.05` / `-0.05` / `+0.10` / `-0.10`), or reset all back to `1.0` in one click.
+- **🐯 YFG: Randomize**
+  - **Randomize Strengths…** — prompts for a `min,max` range and assigns each lora a random strength within it.
+  - **Randomize On/Off…** — prompts for a percent chance (0–100) that each lora is enabled.
+  - **🔁 Auto-Randomize Each Queue Run** — toggle to re-roll strengths/on-off automatically before each individual run in a queued batch. *(Experimental — not yet confirmed reliable on all ComfyUI frontend versions.)*
+- **🐯 YFG: Reorder Panel (drag & drop)** — opens a floating panel listing all loras; drag rows into the order you want and click "Apply & Close."
+
+**Reorder panel:**
+
+![Drag and drop reorder panel](img/YFG-PLL-Companion.gif)
+
+#### 📌 Notes
+- All changes (order, strengths, on/off state) are saved directly in the Power Lora Loader's own widget values — the workflow JSON remains 100% standard rgthree-comfy format, so files stay fully portable to installs that don't have this extension.
+- **Requirement:** [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) must be installed. This ships as part of `ComfyUI_YFG_Comical` and loads automatically — no extra install step.
+- Right-click directly on a lora row to get rgthree's own built-in menu (Show Info / Toggle / Move Up-Down / Remove) — the 🐯 additions live on the node's general right-click menu instead, so both work side by side.
 
 ---
 
