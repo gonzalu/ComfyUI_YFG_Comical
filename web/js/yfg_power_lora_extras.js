@@ -85,9 +85,30 @@ function randomizeStrengths(node, min, max) {
 }
 
 function randomizeEnabled(node, chance) {
+  // Defensive fallback: if chance is ever undefined/NaN (e.g. properties
+  // didn't get initialized for this node instance), Math.random() < undefined
+  // is always false, which would silently turn everything off. Guard against
+  // that rather than letting it fail silently.
+  const c = Number.isFinite(chance) ? Math.max(0, Math.min(1, chance)) : 0.75;
   for (const w of getLoraWidgets(node)) {
-    w.value.on = Math.random() < chance;
+    w.value.on = Math.random() < c;
   }
+  node.setDirtyCanvas(true, true);
+}
+
+function enableExactlyN(node, n) {
+  const widgets = getLoraWidgets(node);
+  const count = Math.max(0, Math.min(n, widgets.length));
+  // Fisher-Yates-ish random pick of `count` distinct indices.
+  const indices = widgets.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const chosen = new Set(indices.slice(0, count));
+  widgets.forEach((w, i) => {
+    w.value.on = chosen.has(i);
+  });
   node.setDirtyCanvas(true, true);
 }
 
@@ -334,14 +355,35 @@ app.registerExtension({
                 },
               },
               {
-                content: "Randomize On/Off…",
+                content: "Randomize On/Off (by % chance)…",
                 callback: () => {
-                  const cur = String(Math.round(node.properties.yfgRandomEnableChance * 100));
-                  yfgPromptDialog("Percent chance each lora is ON (0-100):", cur, (input) => {
-                    const pct = parseFloat(input);
-                    if (isNaN(pct)) return;
-                    node.properties.yfgRandomEnableChance = Math.max(0, Math.min(100, pct)) / 100;
-                    randomizeEnabled(node, node.properties.yfgRandomEnableChance);
+                  const total = getLoraWidgets(node).length;
+                  const curChance = Number.isFinite(node.properties.yfgRandomEnableChance)
+                    ? node.properties.yfgRandomEnableChance
+                    : 0.75;
+                  const cur = String(Math.round(curChance * 100));
+                  yfgPromptDialog(
+                    `Percent chance EACH of ${total} loras is ON (0-100). This is independent per-lora, not a target count:`,
+                    cur,
+                    (input) => {
+                      const pct = parseFloat(input);
+                      if (isNaN(pct)) return;
+                      node.properties.yfgRandomEnableChance = Math.max(0, Math.min(100, pct)) / 100;
+                      randomizeEnabled(node, node.properties.yfgRandomEnableChance);
+                    },
+                  );
+                },
+              },
+              {
+                content: "Enable Exactly N Loras…",
+                callback: () => {
+                  const total = getLoraWidgets(node).length;
+                  const cur = String(node.properties.yfgLastExactN ?? Math.min(3, total));
+                  yfgPromptDialog(`Enable exactly how many of ${total} loras?`, cur, (input) => {
+                    const n = parseInt(input, 10);
+                    if (isNaN(n)) return;
+                    node.properties.yfgLastExactN = n;
+                    enableExactlyN(node, n);
                   });
                 },
               },
