@@ -530,8 +530,14 @@ A pure frontend enhancement for rgthree's **Power Lora Loader (rgthree)** node �
 - **🐯 YFG: Nudge All Strengths** — bump every lora's strength up or down in sync (`+0.05` / `-0.05` / `+0.10` / `-0.10`), or reset all back to `1.0` in one click.
 - **🐯 YFG: Randomize**
   - **Randomize Strengths…** — prompts for a `min,max` range and assigns each lora a random strength within it.
-  - **Randomize On/Off…** — prompts for a percent chance (0–100) that each lora is enabled.
+  - **Randomize On/Off (by % chance)…** — prompts for a percent chance (0–100), rolled **independently for each lora**. This is a per-lora coin-flip, not a target count — e.g. asking for `20%` on a list of 30 loras means each one has a 1-in-5 chance of landing on, so the total enabled will vary run to run (often somewhere around 6, but not always).
+  - **Enable Exactly N Loras…** — prompts for a whole number and turns on exactly that many, chosen at random, with the rest off. Use this instead of the percent option if you want a specific count every time.
   - **🔁 Auto-Randomize Each Queue Run** — toggle to re-roll strengths/on-off automatically before each individual run in a queued batch. *(Experimental — not yet confirmed reliable on all ComfyUI frontend versions.)*
+- **🐯 YFG: Get Trigger Words** — pulls trigger/trained words for the selected loras straight from rgthree's own cached CivitAI info (the same data behind its "Show Info" dialog) and shows them in a copyable dialog.
+  - **Enabled Loras Only** / **All Loras** — choose the scope before fetching.
+  - Handles both short curated CivitAI word lists and raw tag-frequency data (the kind extracted directly from a lora's training captions), deduplicating across all selected loras into one combined list.
+  - No extra backend needed — this calls rgthree's own already-running `/rgthree/api/loras/info` endpoint directly, so it works out of the box wherever rgthree-comfy is installed.
+  - Loras with no cached CivitAI info (never run through "Show Info," or genuinely untagged) are listed separately at the end so you know what's missing rather than being silently skipped.
 - **🐯 YFG: Reorder Panel (drag & drop)** — opens a floating panel listing all loras; drag rows into the order you want and click "Apply & Close."
 
 **Reorder panel:**
@@ -541,6 +547,7 @@ A pure frontend enhancement for rgthree's **Power Lora Loader (rgthree)** node �
 #### 📌 Notes
 - All changes (order, strengths, on/off state) are saved directly in the Power Lora Loader's own widget values — the workflow JSON remains 100% standard rgthree-comfy format, so files stay fully portable to installs that don't have this extension.
 - **Requirement:** [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) must be installed. This ships as part of `ComfyUI_YFG_Comical` and loads automatically — no extra install step.
+- **Get Trigger Words** only returns data rgthree already has cached for a lora. If a lora has never had its info fetched (via rgthree's own "Show Info" on that row, or a CivitAI match), it'll show up in the "no trigger words found" list rather than triggering a fresh lookup.
 - Right-click directly on a lora row to get rgthree's own built-in menu (Show Info / Toggle / Move Up-Down / Remove) — the 🐯 additions live on the node's general right-click menu instead, so both work side by side.
 
 ---

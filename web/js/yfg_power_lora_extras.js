@@ -189,6 +189,198 @@ function yfgPromptDialog(title, defaultValue, onSubmit) {
   });
 }
 
+function yfgResultDialog(title, text) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:10001;";
+
+  const boxLeft = Math.min(lastContextMenuPos.x, window.innerWidth - 340);
+  const boxTop = Math.min(lastContextMenuPos.y, window.innerHeight - 220);
+  const box = document.createElement("div");
+  box.style.cssText = `position:fixed;left:${boxLeft}px;top:${boxTop}px;background:#222;color:#eee;padding:12px 14px;border-radius:8px;width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.5);font-family:sans-serif;z-index:10002;`;
+  box.innerHTML = `<div style="margin-bottom:8px;font-size:13px;">${title}</div>`;
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.readOnly = true;
+  textarea.style.cssText =
+    "width:100%;box-sizing:border-box;height:100px;padding:6px;margin-bottom:8px;background:#333;color:#eee;border:1px solid #555;border-radius:4px;resize:vertical;font-family:sans-serif;font-size:12px;";
+  box.appendChild(textarea);
+
+  const btnRow = document.createElement("div");
+  btnRow.style.cssText = "display:flex;gap:6px;justify-content:flex-end;";
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "Close";
+  closeBtn.style.cssText =
+    "padding:4px 10px;background:#444;color:#eee;border:none;border-radius:4px;cursor:pointer;";
+  const copyBtn = document.createElement("button");
+  copyBtn.textContent = "Copy to Clipboard";
+  copyBtn.style.cssText =
+    "padding:4px 10px;background:#4a90d9;color:#fff;border:none;border-radius:4px;cursor:pointer;";
+  btnRow.appendChild(closeBtn);
+  btnRow.appendChild(copyBtn);
+  box.appendChild(btnRow);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  textarea.focus();
+  textarea.select();
+
+  const close = () => {
+    if (document.body.contains(overlay)) document.body.removeChild(overlay);
+  };
+  closeBtn.onclick = close;
+  copyBtn.onclick = () => {
+    navigator.clipboard?.writeText(textarea.value).catch(() => {
+      textarea.select();
+      document.execCommand("copy");
+    });
+    copyBtn.textContent = "Copied!";
+    setTimeout(() => (copyBtn.textContent = "Copy to Clipboard"), 1200);
+  };
+  box.addEventListener("click", (e) => e.stopPropagation());
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  return {
+    setText: (t) => {
+      textarea.value = t;
+    },
+    setTitle: (t) => {
+      box.firstChild.textContent = t;
+    },
+    close,
+  };
+}
+
+async function fetchRgthreeLoraInfo(loraFile, light) {
+  try {
+    const res = await fetch(
+      `/rgthree/api/loras/info?file=${encodeURIComponent(loraFile)}&light=${light ? "1" : "0"}`,
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json && json.status === 200 ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractTrainedWords(data) {
+  if (!data) return [];
+
+  const tryField = (val) => {
+    if (Array.isArray(val) && val.length) {
+      // Could be plain strings, or {tag, count} / {word, count} objects
+      // (tag-frequency data extracted from the file itself, as opposed to
+      // a short curated CivitAI list).
+      return val
+        .map((item) => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object") {
+            return item.tag ?? item.word ?? item.name ?? "";
+          }
+          return "";
+        })
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+    if (typeof val === "string" && val.trim()) {
+      return val
+        .split(/[,;]/)
+        .map((w) => w.trim())
+        .filter(Boolean);
+    }
+    if (val && typeof val === "object") {
+      // Plain {tag: count} dict.
+      const keys = Object.keys(val).filter(Boolean);
+      if (keys.length) return keys;
+    }
+    return [];
+  };
+
+  for (const key of ["trainedWords", "tags", "tagFrequency", "tag_frequency"]) {
+    const words = tryField(data[key]);
+    if (words.length) return words;
+  }
+  return [];
+}
+
+function findLoraInfoInList(list, loraFile) {
+  if (!Array.isArray(list)) return null;
+  const norm = (s) => String(s || "").replace(/\\/g, "/").toLowerCase();
+  const target = norm(loraFile);
+  // Exact normalized match first, then fall back to matching just the
+  // filename (last path segment) in case of subfolder path differences.
+  let match = list.find((entry) => norm(entry?.file) === target);
+  if (!match) {
+    const targetBase = target.split("/").pop();
+    match = list.find((entry) => norm(entry?.file).split("/").pop() === targetBase);
+  }
+  return match || null;
+}
+
+async function fetchRgthreeLoraTrigger(loraFile) {
+  // rgthree's own backend route (the same one behind its "Show Info"
+  // dialog): GET /rgthree/api/loras/info?file=...&light=0. When the `file`
+  // param fails to resolve cleanly, this endpoint doesn't error -- it
+  // silently falls back to returning ALL loras' info as an array instead
+  // of the one requested. So `data` can come back as either a single
+  // object (normal case) or the full array (fallback case); handle both.
+  const data = await fetchRgthreeLoraInfo(loraFile, false);
+  if (Array.isArray(data)) {
+    const match = findLoraInfoInList(data, loraFile);
+    return extractTrainedWords(match);
+  }
+  return extractTrainedWords(data);
+}
+
+async function fetchTriggerWords(node, onlyEnabled) {
+  const widgets = getLoraWidgets(node).filter(
+    (w) => w.value?.lora && w.value.lora !== "None" && (!onlyEnabled || w.value.on),
+  );
+  if (!widgets.length) {
+    yfgResultDialog("Trigger Words", "No matching loras found.");
+    return;
+  }
+
+  const label = onlyEnabled ? "enabled loras" : "all loras";
+  const dialog = yfgResultDialog(
+    `Trigger Words (${label})`,
+    `Fetching for ${widgets.length} lora(s)… this can take a few seconds, especially for loras without cached info.`,
+  );
+
+  const results = await Promise.all(
+    widgets.map(async (w) => ({
+      lora: w.value.lora,
+      words: await fetchRgthreeLoraTrigger(w.value.lora),
+    })),
+  );
+
+  const seen = new Set();
+  const allWords = [];
+  const missing = [];
+  for (const r of results) {
+    if (!r.words.length) {
+      missing.push(r.lora);
+      continue;
+    }
+    for (const w of r.words) {
+      const key = w.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        allWords.push(w);
+      }
+    }
+  }
+
+  let text = allWords.join(", ");
+  if (missing.length) {
+    text += `\n\n(No trigger words found for: ${missing.join(", ")})`;
+  }
+  dialog.setText(text || "(none found)");
+}
+
 function openReorderPanel(node) {
   const loraWidgets = getLoraWidgets(node);
   if (!loraWidgets.length) return;
@@ -396,6 +588,16 @@ app.registerExtension({
                   node.properties.yfgAutoRandomize = !node.properties.yfgAutoRandomize;
                 },
               },
+            ],
+          },
+        },
+        {
+          content: "🐯 YFG: Get Trigger Words",
+          has_submenu: true,
+          submenu: {
+            options: [
+              { content: "Enabled Loras Only", callback: () => fetchTriggerWords(node, true) },
+              { content: "All Loras", callback: () => fetchTriggerWords(node, false) },
             ],
           },
         },
