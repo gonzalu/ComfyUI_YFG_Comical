@@ -2,21 +2,33 @@
 # Author      : Manny Gonzalez (YFG)
 # Title       : 🐯 YFG CivitAI MetaSave — Package Init
 # Nickname    : YFG_CivitAI_MetaSave
-# Description : Sub-package init for the CivitAI MetaSave node inside
-#               ComfyUI_YFG_Comical.  Installs the PromptExecutor monkey-patch
-#               and exposes the YFG_CivitAI_MetaSave node class for import by
-#               the top-level __init__.py.
+# Description : Sub-package init for the CivitAI MetaSave nodes inside
+#               ComfyUI_YFG_Comical. Installs the PromptExecutor monkey-patch
+#               ONCE and exposes both node versions.
+#
+#               Both versions deliberately live in this one package and share
+#               modules/. Cloning the folder per version would re-apply the
+#               execution monkey-patches, making the pre-hooks fire once per
+#               copy on every node, and would duplicate the model hash cache.
 # =============================================================================
 
-# 1. Install execution hooks (monkey-patches PromptExecutor.execute and
-#    get_input_data so the metadata capture pipeline can observe live graphs)
-from . import modules as _modules  # noqa – side-effect: installs prefix_function wraps
-from .modules import hook as _hook  # noqa
+# 1. Install execution hooks. modules/__init__.py performs the patching as an
+#    import side-effect, so importing it here is what wires everything up.
+from . import modules as _modules  # noqa: F401
+from .modules import hook as _hook
 
-# 2. Import the node class
+# 2. Import the node classes
 from .modules.node import YFG_CivitAI_MetaSave
+from .modules.node_v2 import YFG_CivitAI_MetaSave_V2
 
-# 3. Tell the hook which class to track for the save-node ID
-_hook._SaveNodeClass = YFG_CivitAI_MetaSave
+# 3. Register every save-node class with the shared hook so it can identify
+#    which node is currently executing, regardless of version.
+_hook._SaveNodeClasses.update({
+    YFG_CivitAI_MetaSave,
+    YFG_CivitAI_MetaSave_V2,
+})
 
-__all__ = ["YFG_CivitAI_MetaSave"]
+__all__ = [
+    "YFG_CivitAI_MetaSave",
+    "YFG_CivitAI_MetaSave_V2",
+]

@@ -175,7 +175,7 @@ class YFG_CivitAI_MetaSave:
     RETURN_TYPES = ()
     FUNCTION     = "save_images"
     OUTPUT_NODE  = True
-    CATEGORY     = "YFG"
+    CATEGORY     = "🐯 YFG/💾 Save"
     DESCRIPTION  = (
         "Saves images with full A1111-compatible CivitAI metadata (model, LoRA, "
         "embedding hashes, sampler settings, prompts) so CivitAI automatically "

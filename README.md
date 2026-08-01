@@ -33,6 +33,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
 	+ [Random Prompt From File](#random-prompt-from-file)
 	+ [Display Value](#display-value)
 	+ [CivitAI MetaSave](#civitai-metasave)
+	+ [CivitAI MetaSave V2](#civitai-metasave-v2)
 	+ [Live Preview Panel](#live-preview-panel)
 	+ [Power Lora Loader Extras](#power-lora-loader-extras)
   * [Examples](#examples)
@@ -493,6 +494,8 @@ A minimal utility node that displays any value — `INT`, `FLOAT`, or `STRING` �
 
 ![YFG CivitAI MetaSave](img/YFGCivitAIMetaSave.png)
 
+> **Looking for the newest version?** See [CivitAI MetaSave V2](#civitai-metasave-v2) below. V1 is frozen and will not change, so existing workflows keep working exactly as they are.
+
 Saves images with full **A1111-compatible metadata** embedded so that [CivitAI](https://civitai.com/) automatically recognizes and displays generation info — model, LoRA weights, embeddings, sampler settings, seed, and prompts — exactly as it does for Automatic1111 outputs.
 
 A single node replaces the two-node workflow required by other metadata extensions. Four optional custom key/value extra-metadata pairs are built directly into the node — no helper nodes required.
@@ -542,6 +545,85 @@ Compatible with classic SD (KSampler, KSamplerAdvanced), Flux, SD3, Ideogram, Sa
 - **Steps are required** for full metadata. If no Steps value is found upstream, the parameters string is skipped and a warning is printed to the console. This is a CivitAI requirement, not a bug.
 - **Workflow attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden which itself was a fork of [ComfyUI-SaveImageWithMetaData](
 nkchocoai/ComfyUI-SaveImageWithMetaData). Maintained and extended independently as part of YFG Comical.
+
+---
+
+### CivitAI MetaSave V2
+
+![YFG CivitAI MetaSave V2](img/YFGCivitAIMetaSaveV2.png)
+
+Second-generation metadata save node. Shares the entire capture, trace, and hashing pipeline with V1, but with a cleaner layout and several capabilities V1 could not gain without breaking saved workflows.
+
+**Both versions can be installed and used side by side.** V1 is frozen; new work happens here.
+
+#### 🆕 What's new versus V1
+| | V1 | V2 |
+| --- | --- | --- |
+| Extra metadata fields | 4 fixed pairs | Unlimited — grows as you fill them |
+| Filename tokens | Fixed set only | Plus any extra field or captured metadata field |
+| File numbering | First file unnumbered | Configurable mode, start value, and padding |
+| `output_format` | 6 entries (`png`, `png_with_json`, …) | 3 entries plus a `save_workflow_json` toggle |
+| `quality` | 4 preset buckets | Integer 1–100 |
+| Outputs | None | `filename` and `filepath` |
+
+#### ✨ Features
+- **Everything V1 does** — CivitAI auto-recognition, model/LoRA/embedding hashing with an on-disk cache, inline `<lora:name:weight>` detection, EXIF embedding for JPEG and WebP, and metadata scope control.
+- **Dynamic extra metadata fields** — one empty key/value pair sits at the bottom of the node. Fill it and another appears; clear the trailing ones and the surplus is pruned. Values can be typed or wired from another node.
+- **Metadata-aware filename tokens** — build filenames from your own extra fields or from any captured metadata value.
+- **Configurable numbering** — number every file including the first, choose the starting number, and set the digit padding.
+- **Filename and filepath outputs** — chain the saved path into a logger, display node, or downstream tooling.
+
+#### 🔧 Input Parameters
+- **`images`** *(IMAGE)* – Images to save.
+- **`filename_prefix`** *(string, default: `ComfyUI`)* – Output filename prefix. See [Filename tokens](#-filename-tokens) below.
+- **`subdirectory_name`** *(string)* – Optional sub-folder inside the output directory. Supports the same tokens. Leave blank for the default output folder.
+- **`output_format`** *(choice, default: `png`)* – `png`, `jpg`, or `webp`.
+- **`save_workflow_json`** *(bool, default: `false`)* – Also write a sidecar `.json` file containing the raw workflow.
+- **`quality`** *(int, default: 100)* – Compression quality 1–100 for jpg and webp. 100 is lossless for webp. Ignored for png.
+- **`metadata_scope`** *(choice, default: `full`)* – `full`, `default`, `parameters_only`, `workflow_only`, or `none`.
+- **`filename_numbering`** *(choice, default: `always`)* – `always` numbers every file including the first; `on_conflict` only adds a number when the name already exists.
+- **`numbering_start`** *(int, default: 1)* – First number to use. `0` starts at `0000`, `1` starts at `0001`.
+- **`numbering_padding`** *(int, default: 5)* – Digits to pad to. `5` gives `00001`, `4` gives `0001`.
+- **`include_batch_num`** *(bool, default: `false`)* – Append a 5-digit batch index when saving multiple images from one run.
+- **`prefer_nearest`** *(bool, default: `true`)* – When several upstream nodes supply the same metadata field, prefer the one fewest graph hops away.
+- **`extra_key1`** / **`extra_value1`** *(string, optional)* – First custom metadata pair. Additional pairs appear automatically as you use them.
+
+#### 🖥️ Outputs
+1. **`filename`** – Filename of the last image saved this run, including extension.
+2. **`filepath`** – Full absolute path of the last image saved this run.
+
+#### 🏷️ Filename tokens
+
+| Token | Resolves to |
+| --- | --- |
+| `%date:yyyy-MM-dd%` | Current date/time. Supports `yyyy MM dd hh mm ss` |
+| `%seed%` `%model%` `%width%` `%height%` | Values captured from the workflow |
+| `%pprompt:32%` `%nprompt:32%` | Positive/negative prompt, truncated to N characters |
+| `%extra:KEY%` | Value of your extra metadata field named `KEY` |
+| `%extra:KEY:12%` | Same, truncated to 12 characters |
+| `%KEY%` | Your extra field `KEY`, or any captured metadata field such as `%Sampler%`, `%Steps%`, `%CFG scale%` |
+
+Key matching is case-insensitive. Unresolved tokens are replaced with nothing and logged to the console, so a typo is visible rather than silently baked into a filename.
+
+A literal `/` typed into `filename_prefix` still creates a subfolder; slashes and other illegal characters inside *substituted values* are replaced with `_` so prompt text can be used safely.
+
+**Example:** `%date:yyyy-MM-dd%/YFG-%extra:Prompt Index%-%seed%`
+
+#### ➕ Dynamic extra metadata fields
+
+The node starts with one `extra_key1` / `extra_value1` pair. Type a key or wire a value into it, and `extra_key2` / `extra_value2` appear beneath. Clear the trailing pairs and the extras are removed again, always leaving exactly one empty pair ready.
+
+Each value can be typed directly or connected from another node — wire in a prompt index, a filename, a counter, or any string or number you want recorded in the image.
+
+Pairs are written to the image in numeric order. A pair with an empty key is skipped; a pair with a value but **no** key raises an error rather than silently discarding data.
+
+#### 📌 Notes
+- **`piexif`** must be installed (`pip install piexif`). It is listed in `pyproject.toml` and installs automatically via ComfyUI Manager.
+- **Hash cache** lives in `civitai_metasave/.cache/model_hash_cache.json`, shared with V1. Each model file is hashed once and reused afterwards.
+- **Steps are required** for full metadata. If no Steps value is found upstream, the parameters string is skipped and a warning is printed. This is a CivitAI requirement, not a bug.
+- **Both versions share one set of execution hooks.** They live in the same package deliberately — a separate folder per version would re-apply ComfyUI's execution monkey-patches once per copy.
+- **Attribution** — derived from [comfyui_image_metadata_extension](https://github.com/edelvarden/comfyui_image_metadata_extension) by edelvarden, itself a fork of [ComfyUI-SaveImageWithMetaData](https://github.com/nkchocoai/ComfyUI-SaveImageWithMetaData) by nkchocoai. The dynamic-input technique is adapted from [rgthree-comfy](https://github.com/rgthree/rgthree-comfy). Maintained and extended independently as part of YFG Comical.
+
 
 ### Live Preview Panel
 

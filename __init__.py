@@ -23,7 +23,7 @@ from .RandomOrgV2 import RandomOrgV2TrueRandomNumber
 from .RandomImageFromDirectory import RandomImageFromDirectory
 from .yfg_display_value import YFG_DisplayValue
 from .YFGRandomPromptFromFile import YFGRandomPromptFromFile
-from .civitai_metasave import YFG_CivitAI_MetaSave
+from .civitai_metasave import YFG_CivitAI_MetaSave, YFG_CivitAI_MetaSave_V2
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -50,6 +50,7 @@ NODE_CLASS_MAPPINGS = {
     "YFG_DisplayValue": YFG_DisplayValue,
     "YFGRandomPromptFromFile_node": YFGRandomPromptFromFile,
     "YFG_CivitAI_MetaSave": YFG_CivitAI_MetaSave,
+    "YFG_CivitAI_MetaSave_V2": YFG_CivitAI_MetaSave_V2,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -77,6 +78,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "YFG_DisplayValue": "\U0001f42f YFG Display Value",
     "YFGRandomPromptFromFile_node": "\U0001f42f YFG Random Prompt From File",
     "YFG_CivitAI_MetaSave": "\U0001f42f YFG CivitAI MetaSave",
+    "YFG_CivitAI_MetaSave_V2": "\U0001f42f YFG CivitAI MetaSave V2",
 }
 
 WEB_DIRECTORY = "./web"
