@@ -396,6 +396,11 @@ name: Optional Label
 - **`index`** *(int)* – Used when `selection_mode=by_index`. Auto-syncs after every run.
 - **`range_start`** *(int, default: 0)* – First prompt index in the pool. Auto-fills to 0 when a file is selected. Also the wrap-back point in `incremental` mode.
 - **`range_end`** *(int, default: 0)* – Last prompt index in the pool. Auto-fills to total−1 when a file is selected. 0 = last prompt. Also the wrap trigger in `incremental` mode.
+
+> **Out-of-range bounds are clamped, not rejected**, so a bad range degrades to a usable pool instead of failing mid-queue. Every adjustment is reported in the console:
+> - `range_start` beyond the last prompt is pulled back to the last index.
+> - `range_end` beyond the last prompt is pulled back to the last index.
+> - `range_end` **below** `range_start` is an inverted range and collapses to a single entry at `range_start`. In `incremental_no_wrap` that is indistinguishable from a finished walk, which is why it is called out explicitly.
 - **`last_n_only`** *(bool, default: False)* – When ON, restricts the pool to the last N entries only. Applies to `random` mode only.
 - **`last_n_count`** *(int, default: 100)* – How many entries from the end to include when `last_n_only` is ON.
 - **`random_source`** *(choice, default: auto)* – `auto`, `local`, or `random_org`.
@@ -559,7 +564,7 @@ Second-generation metadata save node. Shares the entire capture, trace, and hash
 #### 🆕 What's new versus V1
 | | V1 | V2 |
 | --- | --- | --- |
-| Extra metadata fields | 4 fixed pairs | Unlimited — grows as you fill them |
+| Extra metadata fields | 4 fixed pairs | Grows as you use them, up to 32 pairs |
 | Filename tokens | Fixed set only | Plus any extra field or captured metadata field |
 | File numbering | First file unnumbered | Configurable mode, start value, and padding |
 | `output_format` | 6 entries (`png`, `png_with_json`, …) | 3 entries plus a `save_workflow_json` toggle |
@@ -586,7 +591,7 @@ Second-generation metadata save node. Shares the entire capture, trace, and hash
 - **`numbering_padding`** *(int, default: 5)* – Digits to pad to. `5` gives `00001`, `4` gives `0001`.
 - **`include_batch_num`** *(bool, default: `false`)* – Append a 5-digit batch index when saving multiple images from one run.
 - **`prefer_nearest`** *(bool, default: `true`)* – When several upstream nodes supply the same metadata field, prefer the one fewest graph hops away.
-- **`extra_key1`** / **`extra_value1`** *(string, optional)* – First custom metadata pair. Additional pairs appear automatically as you use them.
+- **`extra_key1`** / **`extra_value1`** *(string, optional)* – First custom metadata pair. Additional pairs appear automatically as you use them. See [Dynamic extra metadata fields](#-dynamic-extra-metadata-fields) below.
 
 #### 🖥️ Outputs
 1. **`filename`** – Filename of the last image saved this run, including extension.
@@ -611,11 +616,20 @@ A literal `/` typed into `filename_prefix` still creates a subfolder; slashes an
 
 #### ➕ Dynamic extra metadata fields
 
-The node starts with one `extra_key1` / `extra_value1` pair. Type a key or wire a value into it, and `extra_key2` / `extra_value2` appear beneath. Clear the trailing pairs and the extras are removed again, always leaving exactly one empty pair ready.
+The node starts with one `extra_key1` / `extra_value1` pair. Type a key or wire a value into it, and `extra_key2` / `extra_value2` appear beneath. Clear the trailing pairs and the extras are removed again, always leaving exactly one empty pair ready. Up to 32 pairs.
 
-Each value can be typed directly or connected from another node — wire in a prompt index, a filename, a counter, or any string or number you want recorded in the image.
+The usual pattern is to type the key and wire the value:
+
+```
+Random Prompt From File  ──▶  extra_value1     extra_key1 = Prompt Index
+                         ──▶  extra_value2     extra_key2 = Filename
+```
+
+Values can be typed instead, and both strings and numbers are accepted — a wired integer `0` is recorded as `0`, not dropped.
 
 Pairs are written to the image in numeric order. A pair with an empty key is skipped; a pair with a value but **no** key raises an error rather than silently discarding data.
+
+> This is driven by `web/js/civitai_metasave_v2.js`, which ships with the pack. ComfyUI's native `COMFY_AUTOGROW_V3` inputs would remove the need for it, but they are resolved during the socket pass of the frontend's `addInputs()`, which runs before the widget pass — so the initial groups render *above* the node's ordinary widgets rather than below them. The extension keeps the layout correct and also grows on typing, not only on connecting.
 
 #### 📌 Notes
 - **`piexif`** must be installed (`pip install piexif`). It is listed in `pyproject.toml` and installs automatically via ComfyUI Manager.

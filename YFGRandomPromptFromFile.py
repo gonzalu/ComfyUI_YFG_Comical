@@ -7,6 +7,10 @@
               and multiple selection modes.
 
 Changelog:
+  1.4.1  Range bounds now report every clamp or inversion to the console
+         instead of silently collapsing the pool. Tooltips document the
+         behaviour, and the incremental_no_wrap end-of-range notice names
+         the range it walked.
   1.4.0  Added range_start and range_end outputs (slots 8 and 9), reporting
          the resolved pool bounds actually used for the run. Existing slots
          0-7 are unchanged, so saved workflows keep their links intact.
@@ -35,7 +39,7 @@ import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-NODE_VERSION = "1.4.0"
+NODE_VERSION = "1.4.1"
 
 # ─────────────────────────── file format ──────────────────────────────────────
 # Prompt file format:
@@ -482,13 +486,23 @@ class YFGRandomPromptFromFile:
                     "default": 0,
                     "min":     0,
                     "max":     0xFFFFFFFFFFFFFFFF,
-                    "tooltip": "First prompt index to include in random pool (auto-fills to 0 when file selected).",
+                    "tooltip": (
+                        "First prompt index in the pool. Auto-fills to 0 when a file "
+                        "is selected. Also the starting point and wrap-back target for "
+                        "the incremental modes. Values beyond the last prompt are "
+                        "clamped, with a note in the console."
+                    ),
                 }),
                 "range_end": ("INT", {
                     "default": 0,
                     "min":     0,
                     "max":     0xFFFFFFFFFFFFFFFF,
-                    "tooltip": "Last prompt index to include in random pool (auto-fills to total-1 when file selected). 0 = last prompt.",
+                    "tooltip": (
+                        "Last prompt index in the pool. Auto-fills to total-1 when a file "
+                        "is selected. 0 means the last prompt in the file. If set below "
+                        "range_start the range is inverted and collapses to a single "
+                        "entry — the console says so when that happens."
+                    ),
                 }),
                 "last_n_only": ("BOOLEAN", {
                     "default": False,
@@ -580,8 +594,35 @@ class YFGRandomPromptFromFile:
         # Resolve effective range bounds once — shared by every mode so the
         # range_start / range_end outputs are always meaningful, including in
         # by_index mode where the walk itself doesn't use them.
-        lo = max(0, min(int(range_start), total - 1))
-        hi = int(range_end) if int(range_end) > 0 else total - 1
+        #
+        # Clamping is deliberately forgiving so a bad range degrades to a
+        # usable pool rather than erroring mid-queue, but every adjustment is
+        # reported: silently collapsing a range to one entry looks identical
+        # to "the walk finished", which is impossible to diagnose.
+        req_start = int(range_start)
+        req_end   = int(range_end)
+
+        lo = max(0, min(req_start, total - 1))
+        if req_start != lo:
+            print(
+                f"[YFG] RandomPromptFromFile: range_start {req_start} is outside "
+                f"0..{total - 1} for this file; using {lo} instead."
+            )
+
+        hi = req_end if req_end > 0 else total - 1
+        if req_end > 0 and req_end < lo:
+            print(
+                f"[YFG] RandomPromptFromFile: range_end {req_end} is below "
+                f"range_start {lo} — the range is inverted. Falling back to a "
+                f"single-entry pool at index {lo}. Set range_end to {lo} or "
+                f"higher (or 0 for 'last prompt') to use a wider range."
+            )
+        elif req_end > total - 1:
+            print(
+                f"[YFG] RandomPromptFromFile: range_end {req_end} is beyond the "
+                f"last prompt ({total - 1}); using {total - 1} instead."
+            )
+
         hi = max(lo, min(hi, total - 1))
 
         if selection_mode == "by_index":
@@ -607,8 +648,8 @@ class YFGRandomPromptFromFile:
                     self._incr_state[incr_key] = hi
                     print(
                         f"[YFG] RandomPromptFromFile: incremental_no_wrap reached "
-                        f"end of range (index {hi}). Holding at last prompt. "
-                        f"Change the file or range bounds to reset."
+                        f"the end of range {lo}..{hi} (index {hi}). Holding at the "
+                        f"last prompt. Change the file or the range bounds to reset."
                     )
             else:
                 self._incr_state[incr_key] = idx + 1

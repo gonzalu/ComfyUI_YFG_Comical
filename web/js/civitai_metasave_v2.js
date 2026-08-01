@@ -3,7 +3,7 @@
  *
  * @author  Manny Gonzalez
  * @title   🐯 YFG Comical Nodes
- * @version 1.2.0  (diagnostic build)
+ * @version 1.2.0
  *
  * Keeps exactly one empty extra_key / extra_value pair at the bottom of the
  * node. Fill it in and another empty pair appears; clear the trailing ones and
@@ -14,8 +14,8 @@
  *     relying on widget.callback, which does not fire on every edit path in
  *     recent ComfyUI frontends.
  *   - Also syncs from nodeCreated and afterConfigureGraph.
- *   - Console logging so load/registration failures are visible.
- *     Silence it with:  window.YFG_MS2_DEBUG = false
+ *   - Console logging, off by default. Enable with:
+ *       window.YFG_MS2_DEBUG = true
  */
 
 import { app } from "../../../scripts/app.js";
@@ -28,7 +28,7 @@ const keyName = n => `extra_key${n}`;
 const valName = n => `extra_value${n}`;
 
 function log(...args) {
-    if (window.YFG_MS2_DEBUG === false) return;
+    if (window.YFG_MS2_DEBUG !== true) return;
     console.log("%c[YFG MetaSave V2]", "color:#a6e3a1;font-weight:bold", ...args);
 }
 

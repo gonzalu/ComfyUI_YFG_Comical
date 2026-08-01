@@ -228,17 +228,32 @@ class YFG_CivitAI_MetaSave_V2:
                     ),
                 }),
             },
-            # Everything below appears at the bottom of the node. Only the first
-            # pair is declared; the frontend extension adds extra_key2 /
-            # extra_value2 and beyond on demand, and they arrive in **kwargs.
+            # Extra metadata pairs live at the bottom of the node. Only the
+            # first pair is declared here; the frontend extension in
+            # web/js/civitai_metasave_v2.js adds extra_key2 / extra_value2 and
+            # beyond on demand, and they arrive in **kwargs.
+            #
+            # ComfyUI's native COMFY_AUTOGROW_V3 would remove the need for that
+            # extension, but it is resolved during the socket pass of
+            # addInputs(), which runs before the widget pass — so its groups
+            # render above the node's ordinary widgets instead of below them.
+            # Until that ordering is addressable, the extension gives the
+            # correct layout and also grows on typing, not just on connecting.
             "optional": FlexibleOptionalInputType("STRING", {
                 "extra_key1": ("STRING", {
                     "default": "", "multiline": False,
-                    "tooltip": "Custom metadata key 1. Fill this in and another pair appears.",
+                    "tooltip": (
+                        "Metadata key, e.g. 'Prompt Index'. Also usable in "
+                        "filename_prefix as %extra:Prompt Index%.\n\n"
+                        "Fill this in and another pair appears below."
+                    ),
                 }),
                 "extra_value1": ("STRING", {
                     "default": "", "multiline": False,
-                    "tooltip": "Custom metadata value 1. Can be typed or wired from another node.",
+                    "tooltip": (
+                        "Metadata value. Type it, or wire it from another node — "
+                        "numbers and strings are both accepted."
+                    ),
                 }),
             }),
             "hidden": {
@@ -412,35 +427,40 @@ class YFG_CivitAI_MetaSave_V2:
     # Helpers
     # -----------------------------------------------------------------------
 
-    _EXTRA_KEY_RE = re.compile(r"^extra_key(\d+)$")
+    # Matches extra_key1 (what the frontend extension creates) and also
+    # extra.key0, the naming ComfyUI's native autogrow would produce. Both are
+    # accepted so a hand-built prompt or a future switch to autogrow needs no
+    # change here.
+    _EXTRA_KEY_RE = re.compile(r"^extra([._])key(\d+)$")
 
     def _build_extra_metadata(self, values):
         """
-        Collect every extra_key{N} / extra_value{N} pair present in *values*,
-        returned in numeric order regardless of the order they arrive in.
-        Handles gaps left by pairs the user cleared.
+        Collect every extra key/value pair present in *values*, returned in
+        numeric order regardless of the order they arrive in. Handles gaps left
+        by pairs the user cleared or disconnected.
         """
         found = {}
         for name, raw_key in values.items():
             match = self._EXTRA_KEY_RE.match(name)
             if not match:
                 continue
-            n   = int(match.group(1))
+            sep = match.group(1)
+            n   = int(match.group(2))
             key = str(raw_key if raw_key is not None else "").strip()
 
             # Only None counts as absent. Using `or ""` here would silently
             # discard legitimate falsy values — most importantly an integer 0,
             # which is exactly what a prompt index or counter emits on its
             # first item.
-            raw_value = values.get(f"extra_value{n}")
+            raw_value = values.get(f"extra{sep}value{n}")
             value     = "" if raw_value is None else str(raw_value).strip()
 
             if key:
                 found[n] = (key, value)
             elif value:
                 raise ValueError(
-                    f"extra_value{n} has a value ('{value}') but extra_key{n} is empty. "
-                    f"Please provide a key for this metadata entry."
+                    f"An extra metadata value ('{value}') was supplied with no key. "
+                    f"Fill in the matching key field, or clear the value."
                 )
 
         return {key: value for _, (key, value) in sorted(found.items())}
@@ -554,11 +574,11 @@ class YFG_CivitAI_MetaSave_V2:
         extra_value1       = "",
         **kwargs,
     ):
-        # Merge the declared pair with any dynamically-added ones from kwargs
+        # Merge the declared pair with any the frontend extension added
+        # (extra_key2 / extra_value2 / ...), which arrive in kwargs.
         extra_inputs = {"extra_key1": extra_key1, "extra_value1": extra_value1}
         extra_inputs.update({
-            k: v for k, v in kwargs.items()
-            if k.startswith("extra_key") or k.startswith("extra_value")
+            k: v for k, v in kwargs.items() if k.startswith("extra")
         })
         extra_metadata = self._build_extra_metadata(extra_inputs)
 
