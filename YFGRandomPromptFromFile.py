@@ -7,6 +7,12 @@
               and multiple selection modes.
 
 Changelog:
+  1.4.0  Added range_start and range_end outputs (slots 8 and 9), reporting
+         the resolved pool bounds actually used for the run. Existing slots
+         0-7 are unchanged, so saved workflows keep their links intact.
+  1.3.0  Added incremental_no_wrap selection mode. Same sequential walk as
+         incremental, but holds at range_end instead of cycling back to
+         range_start. Console notice printed once the range is exhausted.
   1.2.0  Added incremental selection mode. Advances index by 1 each run,
          bounded by range_start/range_end, wrapping back to range_start
          after the last entry. State is per-file and resets automatically
@@ -29,7 +35,7 @@ import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-NODE_VERSION = "1.2.0"
+NODE_VERSION = "1.4.0"
 
 # ─────────────────────────── file format ──────────────────────────────────────
 # Prompt file format:
@@ -426,7 +432,10 @@ class YFGRandomPromptFromFile:
         "  by_index    — use the INDEX widget value directly.\n"
         "  incremental — advance by 1 each run; wraps back to range_start\n"
         "                after range_end. Useful for cycling through a file\n"
-        "                in order across a batch or repeated generations.\n\n"
+        "                in order across a batch or repeated generations.\n"
+        "  incremental_no_wrap — same sequential walk, but stops at range_end\n"
+        "                and keeps returning it. Use when you want one pass\n"
+        "                through the range with no repeats.\n\n"
         "range_start / range_end auto-fill when a file is selected.\n"
         "Toggle last_n_only to restrict picks to the newest entries.\n"
         "INDEX auto-syncs after every run — switch to by_index with no typing.\n"
@@ -441,6 +450,8 @@ class YFGRandomPromptFromFile:
         "Total number of valid prompts found in the file.",
         "Full path to the selected prompt file.",
         "Filename only (no path) of the selected prompt file.",
+        "First index of the pool actually used this run (resolved, not raw widget value).",
+        "Last index of the pool actually used this run (resolved; range_end=0 becomes total-1).",
     )
 
     @classmethod
@@ -452,12 +463,13 @@ class YFGRandomPromptFromFile:
                     "placeholder": "Path to .txt prompt file — use 📄 Browse or 🕐 Recent",
                     "tooltip":     "Full path to a .txt prompt file.",
                 }),
-                "selection_mode": (["random", "by_index", "incremental"], {
+                "selection_mode": (["random", "by_index", "incremental", "incremental_no_wrap"], {
                     "default": "random",
                     "tooltip": (
                         "random: pick from range_start..range_end each run.\n"
                         "by_index: use the INDEX widget value directly.\n"
-                        "incremental: advance by 1 each run from range_start to range_end, then wrap."
+                        "incremental: advance by 1 each run from range_start to range_end, then wrap.\n"
+                        "incremental_no_wrap: same, but stops and holds at range_end."
                     ),
                 }),
                 "index": ("INT", {
@@ -520,10 +532,12 @@ class YFGRandomPromptFromFile:
             }
         }
 
-    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT", "STRING", "STRING")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT", "STRING", "STRING",
+                     "INT", "INT")
     RETURN_NAMES  = ("positive", "negative", "name",
                      "index_current", "index_previous", "total_count",
-                     "file_path", "file_name")
+                     "file_path", "file_name",
+                     "range_start", "range_end")
     FUNCTION      = "load_prompt"
     CATEGORY      = "🐯 YFG/📝 Prompts"
 
@@ -563,33 +577,46 @@ class YFGRandomPromptFromFile:
         total    = len(prompts)
         prev_idx = self._prev_index
 
+        # Resolve effective range bounds once — shared by every mode so the
+        # range_start / range_end outputs are always meaningful, including in
+        # by_index mode where the walk itself doesn't use them.
+        lo = max(0, min(int(range_start), total - 1))
+        hi = int(range_end) if int(range_end) > 0 else total - 1
+        hi = max(lo, min(hi, total - 1))
+
         if selection_mode == "by_index":
             idx = max(0, min(int(index), total - 1))
 
-        elif selection_mode == "incremental":
-            # Resolve bounds (same as random mode)
-            lo = max(0, min(int(range_start), total - 1))
-            hi = int(range_end) if int(range_end) > 0 else total - 1
-            hi = max(lo, min(hi, total - 1))
+        elif selection_mode in ("incremental", "incremental_no_wrap"):
+            wrap = (selection_mode == "incremental")
 
-            # Key includes file + bounds so any change auto-resets position
-            incr_key = f"{Path(prompt_file).resolve()}::{lo}::{hi}"
+            # Key includes mode + file + bounds so any change auto-resets position
+            incr_key = f"{selection_mode}::{Path(prompt_file).resolve()}::{lo}::{hi}"
 
             if incr_key not in self._incr_state:
-                # First run for this file/range — start at lo
+                # First run for this mode/file/range — start at lo
                 self._incr_state = {incr_key: lo}   # clear stale keys too
 
             idx = self._incr_state[incr_key]
-            # Advance for next run, wrapping back to lo after hi
-            self._incr_state[incr_key] = lo if idx >= hi else idx + 1
+
+            if idx >= hi:
+                if wrap:
+                    self._incr_state[incr_key] = lo
+                else:
+                    # Hold at the last entry; notify once per run that we're done
+                    self._incr_state[incr_key] = hi
+                    print(
+                        f"[YFG] RandomPromptFromFile: incremental_no_wrap reached "
+                        f"end of range (index {hi}). Holding at last prompt. "
+                        f"Change the file or range bounds to reset."
+                    )
+            else:
+                self._incr_state[incr_key] = idx + 1
 
         else:
-            # random mode
-            lo = max(0, min(int(range_start), total - 1))
-            hi = int(range_end) if int(range_end) > 0 else total - 1
-            hi = max(lo, min(hi, total - 1))
-
-            # last_n_only overrides lo to restrict pool to newest entries
+            # random mode — last_n_only narrows the pool to the newest entries.
+            # lo is reassigned here so the reported range reflects the pool
+            # actually drawn from, not the raw widget value.
             if last_n_only:
                 lo = max(lo, hi - int(last_n_count) + 1)
 
@@ -608,11 +635,12 @@ class YFGRandomPromptFromFile:
 
         print(
             f"[YFG] RandomPromptFromFile v{NODE_VERSION}: "
-            f"idx={idx}/{total - 1}  name={name}  file={file_name}"
+            f"idx={idx}  range={lo}..{hi}  total={total}  "
+            f"name={name}  file={file_name}"
         )
 
         result = (positive, negative, name, int(idx), int(prev_idx), int(total),
-                  file_path, file_name)
+                  file_path, file_name, int(lo), int(hi))
 
         return {
             "ui": {
@@ -667,8 +695,8 @@ class YFGRandomPromptFromFile:
         last_n_only, last_n_count, random_source, ensure_unique,
         history_size, time_window_sec, retry_limit, use_shuffle_bag, **kwargs,
     ):
-        # random and incremental always produce a different result each run
-        if selection_mode in ("random", "incremental") or ensure_unique:
+        # random and both incremental modes advance state each run
+        if selection_mode in ("random", "incremental", "incremental_no_wrap") or ensure_unique:
             return float("NaN")
         m = hashlib.sha256()
         for v in (prompt_file, selection_mode, index):
