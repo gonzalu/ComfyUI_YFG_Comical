@@ -7,6 +7,10 @@
               and multiple selection modes.
 
 Changelog:
+  1.2.0  Added incremental selection mode. Advances index by 1 each run,
+         bounded by range_start/range_end, wrapping back to range_start
+         after the last entry. State is per-file and resets automatically
+         when the file changes or range bounds change.
   1.1.0  Simplified inputs: removed first_n/last_n/custom_range/n_pool.
          range_start/range_end auto-populate from file when selected in UI.
          Added last_n_only toggle + last_n_count to restrict pool to newest entries.
@@ -25,7 +29,7 @@ import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-NODE_VERSION = "1.1.0"
+NODE_VERSION = "1.2.0"
 
 # ─────────────────────────── file format ──────────────────────────────────────
 # Prompt file format:
@@ -411,12 +415,18 @@ class YFGRandomPromptFromFile:
 
     DESCRIPTION = (
         f"YFG Random Prompt From File (v{NODE_VERSION})\n\n"
-        "Selects a random prompt from a .txt prompt file.\n\n"
+        "Selects a prompt from a .txt prompt file.\n\n"
         "File format:\n"
         "  positive: your positive prompt\n"
         "  negative: your negative prompt  (empty is fine)\n"
         "  name: optional label            (defaults to filename)\n"
         "  ----  (any number of hyphens as separator)\n\n"
+        "Selection modes:\n"
+        "  random      — pick randomly from range_start..range_end each run.\n"
+        "  by_index    — use the INDEX widget value directly.\n"
+        "  incremental — advance by 1 each run; wraps back to range_start\n"
+        "                after range_end. Useful for cycling through a file\n"
+        "                in order across a batch or repeated generations.\n\n"
         "range_start / range_end auto-fill when a file is selected.\n"
         "Toggle last_n_only to restrict picks to the newest entries.\n"
         "INDEX auto-syncs after every run — switch to by_index with no typing.\n"
@@ -442,9 +452,13 @@ class YFGRandomPromptFromFile:
                     "placeholder": "Path to .txt prompt file — use 📄 Browse or 🕐 Recent",
                     "tooltip":     "Full path to a .txt prompt file.",
                 }),
-                "selection_mode": (["random", "by_index"], {
+                "selection_mode": (["random", "by_index", "incremental"], {
                     "default": "random",
-                    "tooltip": "random picks from range_start..range_end. by_index uses INDEX directly.",
+                    "tooltip": (
+                        "random: pick from range_start..range_end each run.\n"
+                        "by_index: use the INDEX widget value directly.\n"
+                        "incremental: advance by 1 each run from range_start to range_end, then wrap."
+                    ),
                 }),
                 "index": ("INT", {
                     "default": 0,
@@ -514,7 +528,10 @@ class YFGRandomPromptFromFile:
     CATEGORY      = "🐯 YFG/📝 Prompts"
 
     def __init__(self):
-        self._prev_index: int = -1
+        self._prev_index: int  = -1
+        # Incremental mode state: tracks current position per (file, lo, hi) key
+        # so switching files or changing range bounds resets automatically.
+        self._incr_state: dict = {}   # key → next_index
 
     def load_prompt(
         self,
@@ -548,8 +565,26 @@ class YFGRandomPromptFromFile:
 
         if selection_mode == "by_index":
             idx = max(0, min(int(index), total - 1))
+
+        elif selection_mode == "incremental":
+            # Resolve bounds (same as random mode)
+            lo = max(0, min(int(range_start), total - 1))
+            hi = int(range_end) if int(range_end) > 0 else total - 1
+            hi = max(lo, min(hi, total - 1))
+
+            # Key includes file + bounds so any change auto-resets position
+            incr_key = f"{Path(prompt_file).resolve()}::{lo}::{hi}"
+
+            if incr_key not in self._incr_state:
+                # First run for this file/range — start at lo
+                self._incr_state = {incr_key: lo}   # clear stale keys too
+
+            idx = self._incr_state[incr_key]
+            # Advance for next run, wrapping back to lo after hi
+            self._incr_state[incr_key] = lo if idx >= hi else idx + 1
+
         else:
-            # Resolve range
+            # random mode
             lo = max(0, min(int(range_start), total - 1))
             hi = int(range_end) if int(range_end) > 0 else total - 1
             hi = max(lo, min(hi, total - 1))
@@ -632,7 +667,8 @@ class YFGRandomPromptFromFile:
         last_n_only, last_n_count, random_source, ensure_unique,
         history_size, time_window_sec, retry_limit, use_shuffle_bag, **kwargs,
     ):
-        if selection_mode == "random" or ensure_unique:
+        # random and incremental always produce a different result each run
+        if selection_mode in ("random", "incremental") or ensure_unique:
             return float("NaN")
         m = hashlib.sha256()
         for v in (prompt_file, selection_mode, index):

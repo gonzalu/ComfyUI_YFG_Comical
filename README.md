@@ -349,8 +349,10 @@ Selects a single prompt entry from a `.txt` prompt file using true random.org nu
   - `range_start` and `range_end` fill automatically (0 and total−1) whenever a file is selected — no manual entry needed.
 - **Last-N toggle**
   - `last_n_only` restricts the random pool to the last N entries in the file — ideal when new prompts are appended to the bottom and you want to pick only from the newest additions.
+- **Incremental mode**
+  - `selection_mode = incremental` walks the file in order, advancing one prompt per run and wrapping back to the start after the last entry — ideal for batch runs that need every prompt exactly once, in sequence.
 - **Inline output value display**
-  - `index_current`, `index_previous`, and `total_count` are shown directly on the output slots after each run.
+  - `index_current`, `index_previous`, `total_count`, and `file_name` are shown directly on the output slots after each run.
 - **INDEX auto-sync**
   - The INDEX widget updates automatically after every run so switching to `by_index` mode requires no manual typing.
 - **True random.org integration**
@@ -384,11 +386,14 @@ name: Optional Label
 
 #### 🔧 Input Parameters
 - **`prompt_file`** *(string)* – Path to the `.txt` prompt file. Use **📄 Browse** or **🕐 Recent** buttons.
-- **`selection_mode`** *(choice, default: random)* – `random` picks from `range_start`..`range_end`; `by_index` uses the INDEX widget directly.
+- **`selection_mode`** *(choice, default: random)* – How the prompt is chosen:
+  - `random` – picks randomly from `range_start`..`range_end`.
+  - `by_index` – uses the INDEX widget value directly.
+  - `incremental` – advances one prompt per run from `range_start` to `range_end`, then wraps. See [Incremental Mode](#-incremental-mode) below.
 - **`index`** *(int)* – Used when `selection_mode=by_index`. Auto-syncs after every run.
-- **`range_start`** *(int, default: 0)* – First prompt index in the random pool. Auto-fills to 0 when a file is selected.
-- **`range_end`** *(int, default: 0)* – Last prompt index in the random pool. Auto-fills to total−1 when a file is selected. 0 = last prompt.
-- **`last_n_only`** *(bool, default: False)* – When ON, restricts the pool to the last N entries only.
+- **`range_start`** *(int, default: 0)* – First prompt index in the pool. Auto-fills to 0 when a file is selected. Also the wrap-back point in `incremental` mode.
+- **`range_end`** *(int, default: 0)* – Last prompt index in the pool. Auto-fills to total−1 when a file is selected. 0 = last prompt. Also the wrap trigger in `incremental` mode.
+- **`last_n_only`** *(bool, default: False)* – When ON, restricts the pool to the last N entries only. Applies to `random` mode only.
 - **`last_n_count`** *(int, default: 100)* – How many entries from the end to include when `last_n_only` is ON.
 - **`random_source`** *(choice, default: auto)* – `auto`, `local`, or `random_org`.
 - **`ensure_unique`** *(bool, default: True)* – Avoid repeating prompts within a session.
@@ -404,12 +409,38 @@ name: Optional Label
 4. **`index_current`** – 0-based index of the selected prompt. Auto-syncs to INDEX widget.
 5. **`index_previous`** – Index of the prompt selected in the previous run this session.
 6. **`total_count`** – Total number of valid prompts found in the file.
+7. **`file_path`** – Full path to the selected prompt file. Wire into a metadata field or display node as needed.
+8. **`file_name`** – Filename only (no path). Displayed inline on the output slot after each run; full path shown on hover.
+
+#### 🔁 Incremental Mode
+
+Set `selection_mode` to `incremental` to walk the prompt file in order rather than picking randomly.
+
+**How it works**
+
+- The first run returns the prompt at `range_start`.
+- Each subsequent run advances the index by exactly 1.
+- When `range_end` is reached, the next run wraps back to `range_start` and the cycle repeats.
+- The INDEX widget ticks up visibly on every run, so the current position is always on screen.
+
+**Bounds**
+
+`range_start` and `range_end` define the cycle. Since both auto-fill to `0` and `total−1` when a file is selected, the default behavior walks the entire file. Narrow them to cycle a subset — for example `range_start=500`, `range_end=549` loops those 50 prompts indefinitely.
+
+**Automatic reset**
+
+Position is tracked per file *and* per range. Changing the prompt file, `range_start`, or `range_end` resets the counter to `range_start` on the next run — no manual reset needed. To reset without changing anything, switch to `by_index`, set INDEX to your desired starting point, then switch back.
+
+**Interaction with other settings**
+
+`ensure_unique`, `use_shuffle_bag`, `random_source`, and `last_n_only` are all ignored in incremental mode — sequential traversal already guarantees each prompt appears exactly once per cycle.
 
 #### 🔑 Random.org Setup (optional)
 Uses the same `random_org_api_key.json` file as the Random Number nodes — see [Random.org True Random Number (V2)](#randomorg-true-random-number-v2) for setup instructions.
 
 #### 📌 Notes
 - **Session-lifetime uniqueness** resets when Python restarts.
+- **Incremental position** is held in memory for the session. Restarting ComfyUI restarts the cycle at `range_start`.
 - **File history** is persisted to `yfg_file_history.json` and survives restarts (max 20 entries).
 - **File cache** — parsed prompt files are cached in memory keyed by modification time. Re-parsing only occurs when the file changes on disk — zero overhead on repeat runs.
 - **API limits**: Random.org quotas apply — check your dashboard.
