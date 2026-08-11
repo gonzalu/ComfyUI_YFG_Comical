@@ -24,6 +24,7 @@ from .RandomImageFromDirectory import RandomImageFromDirectory
 from .yfg_display_value import YFG_DisplayValue
 from .YFGRandomPromptFromFile import YFGRandomPromptFromFile
 from .civitai_metasave import YFG_CivitAI_MetaSave, YFG_CivitAI_MetaSave_V2
+from .text_concat_swap import YFGTextConcatSwap
 
 NODE_CLASS_MAPPINGS = {
     "image_histograms_node": ImageHistogramsNode,
@@ -51,6 +52,7 @@ NODE_CLASS_MAPPINGS = {
     "YFGRandomPromptFromFile_node": YFGRandomPromptFromFile,
     "YFG_CivitAI_MetaSave": YFG_CivitAI_MetaSave,
     "YFG_CivitAI_MetaSave_V2": YFG_CivitAI_MetaSave_V2,
+    "YFGTextConcatSwap": YFGTextConcatSwap,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -79,6 +81,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "YFGRandomPromptFromFile_node": "\U0001f42f YFG Random Prompt From File",
     "YFG_CivitAI_MetaSave": "\U0001f42f YFG CivitAI MetaSave",
     "YFG_CivitAI_MetaSave_V2": "\U0001f42f YFG CivitAI MetaSave V2",
+    "YFGTextConcatSwap": "\U0001f42f YFG Text Concat Swap",
 }
 
 WEB_DIRECTORY = "./web"

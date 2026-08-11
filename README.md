@@ -36,6 +36,7 @@ A collection of ComfyUI utility custom nodes. These provide functionality not of
 	+ [CivitAI MetaSave V2](#civitai-metasave-v2)
 	+ [Live Preview Panel](#live-preview-panel)
 	+ [Power Lora Loader Extras](#power-lora-loader-extras)
+	+ [Text Concat Swap](#text-concat-swap)
   * [Examples](#examples)
     + [Sample Workflow](#sample-workflow)
   * [All nodes as of 06-13-2024](#all-nodes-as-of-06-13-2024)
@@ -696,6 +697,38 @@ A pure frontend enhancement for rgthree's **Power Lora Loader (rgthree)** node �
 - **Requirement:** [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) must be installed. This ships as part of `ComfyUI_YFG_Comical` and loads automatically — no extra install step.
 - **Get Trigger Words** only returns data rgthree already has cached for a lora. If a lora has never had its info fetched (via rgthree's own "Show Info" on that row, or a CivitAI match), it'll show up in the "no trigger words found" list rather than triggering a fresh lookup.
 - Right-click directly on a lora row to get rgthree's own built-in menu (Show Info / Toggle / Move Up-Down / Remove) — the 🐯 additions live on the node's general right-click menu instead, so both work side by side.
+
+---
+
+### Text Concat Swap
+
+![YFG Text Concat Swap](img/YFGConcatSwap.png)
+
+Joins two strings with a delimiter, plus a single clickable toggle that flips which string comes first. It replaces the usual manual dance of rewriting (or rewiring) the inputs of the core `StringConcatenate` node every time you want the style tail in front of the subject instead of behind it.
+
+#### ✨ Features
+- **One-click order flip** — the `swap` widget is a boolean button that reads `A + B` or `B + A`, so the current order is visible on the node face at a glance and changes with a single click.
+- **No dangling delimiters** — empty inputs are dropped before joining, so a muted or unconnected branch never leaves a stray `, ` in the prompt.
+- **`None`-safe** — a `None` arriving from a muted upstream node (a bypassed VL captioner, for example) is coerced to an empty string instead of raising.
+- **Escape-aware delimiter** — `\n`, `\t` and `\s` can be typed into the single-line delimiter widget to get a newline, tab, or plain space.
+- **Optional trim** — `trim_parts` strips leading/trailing whitespace from each side before joining, so sloppy text boxes still produce clean output.
+- **Order readout** — a second `order` output emits `A + B` or `B + A` as a string, handy for piping into 🐯 YFG Display Value or into saved metadata.
+
+#### 🔧 Input Parameters
+- **`text_a`** *(STRING, multiline)* – First string when `swap` is **off**.
+- **`text_b`** *(STRING, multiline)* – First string when `swap` is **on**.
+- **`delimiter`** *(STRING)* – Joiner placed between the two parts. Default `, `. Supports `\n`, `\t`, `\s`.
+- **`swap`** *(BOOLEAN)* – `A + B` (off) or `B + A` (on).
+- **`trim_parts`** *(BOOLEAN)* – `trim` (default) strips surrounding whitespace from each part; `raw` leaves both untouched.
+
+#### 🖥️ Outputs
+- **`text`** *(STRING)* – The concatenated result.
+- **`order`** *(STRING)* – `A + B` or `B + A`, reflecting the current toggle state.
+
+#### 📌 Notes
+- Both text widgets honour ComfyUI dynamic prompts, and either can be converted to an input socket and driven from upstream nodes.
+- The delimiter is only inserted when both parts are non-empty — with one side blank the output is just the other side, unchanged.
+- Pure stdlib; no additional dependencies.
 
 ---
 
