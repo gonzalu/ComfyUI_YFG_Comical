@@ -21,7 +21,7 @@ class YFGTextConcatSwap:
     plain space or newline can be entered in the single-line widget.
     """
 
-    CATEGORY = "🐯 YFG/Switchers"
+    CATEGORY = "🐯 YFG/🔀 Switchers"
     FUNCTION = "concat_swap"
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("text", "order")
