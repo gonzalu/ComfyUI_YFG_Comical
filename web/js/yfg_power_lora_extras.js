@@ -75,6 +75,23 @@ function nudgeAll(node, delta) {
   node.setDirtyCanvas(true, true);
 }
 
+function nudgeAllByPercent(node, pct) {
+  // Multiplicative adjust: +10 means "each strength * 1.10", -20 means
+  // "each strength * 0.80". Unlike nudgeAll's fixed delta, this scales
+  // proportionally, so a 0.4 and a 1.2 strength both move by the same
+  // relative amount rather than the same absolute amount.
+  const factor = 1 + pct / 100;
+  for (const w of getLoraWidgets(node)) {
+    if (w.value.strength != null) {
+      w.value.strength = Math.round(w.value.strength * factor * 100) / 100;
+    }
+    if (w.value.strengthTwo != null) {
+      w.value.strengthTwo = Math.round(w.value.strengthTwo * factor * 100) / 100;
+    }
+  }
+  node.setDirtyCanvas(true, true);
+}
+
 function randomizeStrengths(node, min, max) {
   for (const w of getLoraWidgets(node)) {
     const val = Math.round((min + Math.random() * (max - min)) * 100) / 100;
@@ -190,6 +207,8 @@ function yfgPromptDialog(title, defaultValue, onSubmit) {
 }
 
 function yfgResultDialog(title, text) {
+  let copyText = text;
+
   const overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;z-index:10001;";
 
@@ -230,7 +249,7 @@ function yfgResultDialog(title, text) {
   };
   closeBtn.onclick = close;
   copyBtn.onclick = () => {
-    navigator.clipboard?.writeText(textarea.value).catch(() => {
+    navigator.clipboard?.writeText(copyText).catch(() => {
       textarea.select();
       document.execCommand("copy");
     });
@@ -245,6 +264,10 @@ function yfgResultDialog(title, text) {
   return {
     setText: (t) => {
       textarea.value = t;
+      copyText = t;
+    },
+    setCopyText: (t) => {
+      copyText = t;
     },
     setTitle: (t) => {
       box.firstChild.textContent = t;
@@ -374,11 +397,13 @@ async function fetchTriggerWords(node, onlyEnabled) {
     }
   }
 
-  let text = allWords.join(", ");
+  const wordsOnly = allWords.join(", ") || "(none found)";
+  let displayText = wordsOnly;
   if (missing.length) {
-    text += `\n\n(No trigger words found for: ${missing.join(", ")})`;
+    displayText += `\n\n(No trigger words found for: ${missing.join(", ")})`;
   }
-  dialog.setText(text || "(none found)");
+  dialog.setText(displayText);
+  dialog.setCopyText(wordsOnly);
 }
 
 function openReorderPanel(node) {
@@ -462,6 +487,7 @@ app.registerExtension({
     node.properties.yfgAutoRandomize = node.properties.yfgAutoRandomize ?? false;
     node.properties.yfgRandomStrengthMin = node.properties.yfgRandomStrengthMin ?? 0.4;
     node.properties.yfgRandomStrengthMax = node.properties.yfgRandomStrengthMax ?? 1.0;
+    node.properties.yfgLastNudgePercent = node.properties.yfgLastNudgePercent ?? 10;
     node.properties.yfgRandomEnableChance = node.properties.yfgRandomEnableChance ?? 0.75;
 
     // A hidden widget whose sole purpose is the `beforeQueued` hook.
@@ -519,6 +545,23 @@ app.registerExtension({
               { content: "-0.05", callback: () => nudgeAll(node, -0.05) },
               { content: "+0.10", callback: () => nudgeAll(node, 0.1) },
               { content: "-0.10", callback: () => nudgeAll(node, -0.1) },
+              null, // divider
+              {
+                content: "By Percent…",
+                callback: () => {
+                  const cur = String(node.properties.yfgLastNudgePercent ?? 10);
+                  yfgPromptDialog(
+                    "Percent to adjust all strengths by (e.g. 10 for +10%, -20 for -20%):",
+                    cur,
+                    (input) => {
+                      const pct = parseFloat(input);
+                      if (isNaN(pct)) return;
+                      node.properties.yfgLastNudgePercent = pct;
+                      nudgeAllByPercent(node, pct);
+                    },
+                  );
+                },
+              },
               null, // divider
               { content: "Reset All to 1.0", callback: () => resetAllStrengths(node) },
             ],
