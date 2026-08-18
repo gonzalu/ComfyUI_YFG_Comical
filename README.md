@@ -695,7 +695,7 @@ A pure frontend enhancement for rgthree's **Power Lora Loader (rgthree)** node �
 #### 📌 Notes
 - All changes (order, strengths, on/off state) are saved directly in the Power Lora Loader's own widget values — the workflow JSON remains 100% standard rgthree-comfy format, so files stay fully portable to installs that don't have this extension.
 - **Requirement:** [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) must be installed. This ships as part of `ComfyUI_YFG_Comical` and loads automatically — no extra install step.
-- **Get Trigger Words** only returns data rgthree already has cached for a lora. If a lora has never had its info fetched (via rgthree's own "Show Info" on that row, or a CivitAI match), it'll show up in the "no trigger words found" list rather than triggering a fresh lookup.
+- **Get Trigger Words** only returns data rgthree already has cached for a lora. If a lora has never had its info fetched (via rgthree's own "Show Info" on that row, or a CivitAI match), it'll show up in the "no trigger words found" list rather than triggering a fresh lookup. Copies only the trigger words to the clipboard.
 - Right-click directly on a lora row to get rgthree's own built-in menu (Show Info / Toggle / Move Up-Down / Remove) — the 🐯 additions live on the node's general right-click menu instead, so both work side by side.
 
 ---
