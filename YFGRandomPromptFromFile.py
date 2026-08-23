@@ -7,20 +7,6 @@
               and multiple selection modes.
 
 Changelog:
-  1.4.1  Range bounds now report every clamp or inversion to the console
-         instead of silently collapsing the pool. Tooltips document the
-         behaviour, and the incremental_no_wrap end-of-range notice names
-         the range it walked.
-  1.4.0  Added range_start and range_end outputs (slots 8 and 9), reporting
-         the resolved pool bounds actually used for the run. Existing slots
-         0-7 are unchanged, so saved workflows keep their links intact.
-  1.3.0  Added incremental_no_wrap selection mode. Same sequential walk as
-         incremental, but holds at range_end instead of cycling back to
-         range_start. Console notice printed once the range is exhausted.
-  1.2.0  Added incremental selection mode. Advances index by 1 each run,
-         bounded by range_start/range_end, wrapping back to range_start
-         after the last entry. State is per-file and resets automatically
-         when the file changes or range bounds change.
   1.1.0  Simplified inputs: removed first_n/last_n/custom_range/n_pool.
          range_start/range_end auto-populate from file when selected in UI.
          Added last_n_only toggle + last_n_count to restrict pool to newest entries.
@@ -39,7 +25,7 @@ import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-NODE_VERSION = "1.4.1"
+NODE_VERSION = "1.1.0"
 
 # ─────────────────────────── file format ──────────────────────────────────────
 # Prompt file format:
@@ -83,7 +69,11 @@ class _PromptFileCache:
         except Exception as e:
             print(f"[YFG] RandomPromptFromFile: cannot read '{filepath}': {e}")
             return []
-        blocks  = _SEPARATOR_RE.split(data)
+        # Strip any leading separator line (e.g. "----\n" at position 0).
+        # The split regex requires \n before hyphens, so a leading separator
+        # would not be matched — causing the first prompt to be silently lost.
+        data   = re.sub(r'^[ \t]*-+[ \t]*[\r\n]+', '', data)
+        blocks = _SEPARATOR_RE.split(data)
         prompts = []
         stem    = Path(filepath).stem
         for block in blocks:
@@ -233,41 +223,11 @@ try:
     from server import PromptServer
     from aiohttp import web as _aio_web
 
-    # ── remote-access guard for /yfg/* routes ─────────────────────────────
-    # These endpoints expose filesystem browsing. By default they only
-    # answer requests from the local machine (loopback). Users who run
-    # ComfyUI with --listen and genuinely want LAN access to the file
-    # browser can opt in by creating an empty file named
-    # "yfg_allow_remote.json" next to this script.
-    _YFG_ALLOW_REMOTE_FLAG = Path(__file__).with_name("yfg_allow_remote.json")
-
-    def _yfg_remote_allowed(request) -> bool:
-        if _YFG_ALLOW_REMOTE_FLAG.exists():
-            return True
-        peer = request.remote  # aiohttp peer IP string, or None (unix socket)
-        if peer is None:
-            return True
-        return peer == "::1" or peer.startswith("127.")
-
-    def _yfg_local_only(handler):
-        """Decorator: reject non-loopback requests with 403 unless opted in."""
-        async def _guarded(request):
-            if not _yfg_remote_allowed(request):
-                return _aio_web.json_response(
-                    {"error": "This endpoint is restricted to localhost. "
-                              "Create yfg_allow_remote.json next to "
-                              "YFGRandomPromptFromFile.py to allow remote access."},
-                    status=403)
-            return await handler(request)
-        return _guarded
-
     @PromptServer.instance.routes.get("/yfg/file_history")
-    @_yfg_local_only
     async def _yfg_get_file_history(request):
         return _aio_web.json_response(_FileHistory.get())
 
     @PromptServer.instance.routes.post("/yfg/file_history/add")
-    @_yfg_local_only
     async def _yfg_add_file_history(request):
         data     = await request.json()
         filepath = data.get("filepath", "").strip()
@@ -276,7 +236,6 @@ try:
         return _aio_web.json_response({"ok": True, "history": _FileHistory.get()})
 
     @PromptServer.instance.routes.post("/yfg/file_history/remove")
-    @_yfg_local_only
     async def _yfg_remove_file_history(request):
         data     = await request.json()
         filepath = data.get("filepath", "").strip()
@@ -285,13 +244,11 @@ try:
         return _aio_web.json_response({"ok": True, "history": _FileHistory.get()})
 
     @PromptServer.instance.routes.post("/yfg/file_history/clear")
-    @_yfg_local_only
     async def _yfg_clear_file_history(request):
         _FileHistory.clear()
         return _aio_web.json_response({"ok": True})
 
     @PromptServer.instance.routes.get("/yfg/file_browse")
-    @_yfg_local_only
     async def _yfg_browse_files(request):
         """Navigator that returns both subdirectories and .txt files."""
         path        = request.query.get("path", "").strip()
@@ -346,7 +303,6 @@ try:
             return _aio_web.json_response({"error": str(e)}, status=500)
 
     @PromptServer.instance.routes.get("/yfg/prompt_count")
-    @_yfg_local_only
     async def _yfg_prompt_count(request):
         """Returns total valid prompt count for a file (uses parse cache)."""
         filepath = request.query.get("path", "").strip()
@@ -425,21 +381,12 @@ class YFGRandomPromptFromFile:
 
     DESCRIPTION = (
         f"YFG Random Prompt From File (v{NODE_VERSION})\n\n"
-        "Selects a prompt from a .txt prompt file.\n\n"
+        "Selects a random prompt from a .txt prompt file.\n\n"
         "File format:\n"
         "  positive: your positive prompt\n"
         "  negative: your negative prompt  (empty is fine)\n"
         "  name: optional label            (defaults to filename)\n"
         "  ----  (any number of hyphens as separator)\n\n"
-        "Selection modes:\n"
-        "  random      — pick randomly from range_start..range_end each run.\n"
-        "  by_index    — use the INDEX widget value directly.\n"
-        "  incremental — advance by 1 each run; wraps back to range_start\n"
-        "                after range_end. Useful for cycling through a file\n"
-        "                in order across a batch or repeated generations.\n"
-        "  incremental_no_wrap — same sequential walk, but stops at range_end\n"
-        "                and keeps returning it. Use when you want one pass\n"
-        "                through the range with no repeats.\n\n"
         "range_start / range_end auto-fill when a file is selected.\n"
         "Toggle last_n_only to restrict picks to the newest entries.\n"
         "INDEX auto-syncs after every run — switch to by_index with no typing.\n"
@@ -452,10 +399,6 @@ class YFGRandomPromptFromFile:
         "0-based index of the selected prompt. Auto-syncs to INDEX widget.",
         "Index of the previously selected prompt this session.",
         "Total number of valid prompts found in the file.",
-        "Full path to the selected prompt file.",
-        "Filename only (no path) of the selected prompt file.",
-        "First index of the pool actually used this run (resolved, not raw widget value).",
-        "Last index of the pool actually used this run (resolved; range_end=0 becomes total-1).",
     )
 
     @classmethod
@@ -467,14 +410,9 @@ class YFGRandomPromptFromFile:
                     "placeholder": "Path to .txt prompt file — use 📄 Browse or 🕐 Recent",
                     "tooltip":     "Full path to a .txt prompt file.",
                 }),
-                "selection_mode": (["random", "by_index", "incremental", "incremental_no_wrap"], {
+                "selection_mode": (["random", "by_index"], {
                     "default": "random",
-                    "tooltip": (
-                        "random: pick from range_start..range_end each run.\n"
-                        "by_index: use the INDEX widget value directly.\n"
-                        "incremental: advance by 1 each run from range_start to range_end, then wrap.\n"
-                        "incremental_no_wrap: same, but stops and holds at range_end."
-                    ),
+                    "tooltip": "random picks from range_start..range_end. by_index uses INDEX directly.",
                 }),
                 "index": ("INT", {
                     "default": 0,
@@ -486,23 +424,13 @@ class YFGRandomPromptFromFile:
                     "default": 0,
                     "min":     0,
                     "max":     0xFFFFFFFFFFFFFFFF,
-                    "tooltip": (
-                        "First prompt index in the pool. Auto-fills to 0 when a file "
-                        "is selected. Also the starting point and wrap-back target for "
-                        "the incremental modes. Values beyond the last prompt are "
-                        "clamped, with a note in the console."
-                    ),
+                    "tooltip": "First prompt index to include in random pool (auto-fills to 0 when file selected).",
                 }),
                 "range_end": ("INT", {
                     "default": 0,
                     "min":     0,
                     "max":     0xFFFFFFFFFFFFFFFF,
-                    "tooltip": (
-                        "Last prompt index in the pool. Auto-fills to total-1 when a file "
-                        "is selected. 0 means the last prompt in the file. If set below "
-                        "range_start the range is inverted and collapses to a single "
-                        "entry — the console says so when that happens."
-                    ),
+                    "tooltip": "Last prompt index to include in random pool (auto-fills to total-1 when file selected). 0 = last prompt.",
                 }),
                 "last_n_only": ("BOOLEAN", {
                     "default": False,
@@ -546,20 +474,14 @@ class YFGRandomPromptFromFile:
             }
         }
 
-    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT", "STRING", "STRING",
-                     "INT", "INT")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT")
     RETURN_NAMES  = ("positive", "negative", "name",
-                     "index_current", "index_previous", "total_count",
-                     "file_path", "file_name",
-                     "range_start", "range_end")
+                     "index_current", "index_previous", "total_count")
     FUNCTION      = "load_prompt"
     CATEGORY      = "🐯 YFG/📝 Prompts"
 
     def __init__(self):
-        self._prev_index: int  = -1
-        # Incremental mode state: tracks current position per (file, lo, hi) key
-        # so switching files or changing range bounds resets automatically.
-        self._incr_state: dict = {}   # key → next_index
+        self._prev_index: int = -1
 
     def load_prompt(
         self,
@@ -591,73 +513,15 @@ class YFGRandomPromptFromFile:
         total    = len(prompts)
         prev_idx = self._prev_index
 
-        # Resolve effective range bounds once — shared by every mode so the
-        # range_start / range_end outputs are always meaningful, including in
-        # by_index mode where the walk itself doesn't use them.
-        #
-        # Clamping is deliberately forgiving so a bad range degrades to a
-        # usable pool rather than erroring mid-queue, but every adjustment is
-        # reported: silently collapsing a range to one entry looks identical
-        # to "the walk finished", which is impossible to diagnose.
-        req_start = int(range_start)
-        req_end   = int(range_end)
-
-        lo = max(0, min(req_start, total - 1))
-        if req_start != lo:
-            print(
-                f"[YFG] RandomPromptFromFile: range_start {req_start} is outside "
-                f"0..{total - 1} for this file; using {lo} instead."
-            )
-
-        hi = req_end if req_end > 0 else total - 1
-        if req_end > 0 and req_end < lo:
-            print(
-                f"[YFG] RandomPromptFromFile: range_end {req_end} is below "
-                f"range_start {lo} — the range is inverted. Falling back to a "
-                f"single-entry pool at index {lo}. Set range_end to {lo} or "
-                f"higher (or 0 for 'last prompt') to use a wider range."
-            )
-        elif req_end > total - 1:
-            print(
-                f"[YFG] RandomPromptFromFile: range_end {req_end} is beyond the "
-                f"last prompt ({total - 1}); using {total - 1} instead."
-            )
-
-        hi = max(lo, min(hi, total - 1))
-
         if selection_mode == "by_index":
             idx = max(0, min(int(index), total - 1))
-
-        elif selection_mode in ("incremental", "incremental_no_wrap"):
-            wrap = (selection_mode == "incremental")
-
-            # Key includes mode + file + bounds so any change auto-resets position
-            incr_key = f"{selection_mode}::{Path(prompt_file).resolve()}::{lo}::{hi}"
-
-            if incr_key not in self._incr_state:
-                # First run for this mode/file/range — start at lo
-                self._incr_state = {incr_key: lo}   # clear stale keys too
-
-            idx = self._incr_state[incr_key]
-
-            if idx >= hi:
-                if wrap:
-                    self._incr_state[incr_key] = lo
-                else:
-                    # Hold at the last entry; notify once per run that we're done
-                    self._incr_state[incr_key] = hi
-                    print(
-                        f"[YFG] RandomPromptFromFile: incremental_no_wrap reached "
-                        f"the end of range {lo}..{hi} (index {hi}). Holding at the "
-                        f"last prompt. Change the file or the range bounds to reset."
-                    )
-            else:
-                self._incr_state[incr_key] = idx + 1
-
         else:
-            # random mode — last_n_only narrows the pool to the newest entries.
-            # lo is reassigned here so the reported range reflects the pool
-            # actually drawn from, not the raw widget value.
+            # Resolve range
+            lo = max(0, min(int(range_start), total - 1))
+            hi = int(range_end) if int(range_end) > 0 else total - 1
+            hi = max(lo, min(hi, total - 1))
+
+            # last_n_only overrides lo to restrict pool to newest entries
             if last_n_only:
                 lo = max(lo, hi - int(last_n_count) + 1)
 
@@ -671,25 +535,18 @@ class YFGRandomPromptFromFile:
         self._prev_index = idx
         _FileHistory.add(prompt_file)
 
-        file_path = str(Path(prompt_file).resolve())
-        file_name = Path(prompt_file).name
-
         print(
             f"[YFG] RandomPromptFromFile v{NODE_VERSION}: "
-            f"idx={idx}  range={lo}..{hi}  total={total}  "
-            f"name={name}  file={file_name}"
+            f"idx={idx}/{total - 1}  name={name}"
         )
 
-        result = (positive, negative, name, int(idx), int(prev_idx), int(total),
-                  file_path, file_name, int(lo), int(hi))
+        result = (positive, negative, name, int(idx), int(prev_idx), int(total))
 
         return {
             "ui": {
                 "yfg_pf_index_current":  (int(idx),),
                 "yfg_pf_index_previous": (int(prev_idx),),
                 "yfg_pf_total_count":    (int(total),),
-                "yfg_pf_file_name":      (file_name,),
-                "yfg_pf_file_path":      (file_path,),
             },
             "result": result,
         }
@@ -736,8 +593,7 @@ class YFGRandomPromptFromFile:
         last_n_only, last_n_count, random_source, ensure_unique,
         history_size, time_window_sec, retry_limit, use_shuffle_bag, **kwargs,
     ):
-        # random and both incremental modes advance state each run
-        if selection_mode in ("random", "incremental", "incremental_no_wrap") or ensure_unique:
+        if selection_mode == "random" or ensure_unique:
             return float("NaN")
         m = hashlib.sha256()
         for v in (prompt_file, selection_mode, index):
