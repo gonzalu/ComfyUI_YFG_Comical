@@ -402,6 +402,10 @@ class YFGRandomPromptFromFile:
         "0-based index of the selected prompt. Auto-syncs to INDEX widget.",
         "Index of the previously selected prompt this session.",
         "Total number of valid prompts found in the file.",
+        "Full path to the prompt file.",
+        "Filename of the prompt file (basename only).",
+        "Effective range_start used for this run.",
+        "Effective range_end used for this run.",
     )
 
     @classmethod
@@ -477,9 +481,10 @@ class YFGRandomPromptFromFile:
             }
         }
 
-    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING", "INT", "INT", "INT", "STRING", "STRING", "INT", "INT")
     RETURN_NAMES  = ("positive", "negative", "name",
-                     "index_current", "index_previous", "total_count")
+                     "index_current", "index_previous", "total_count",
+                     "file_path", "file_name", "range_start", "range_end")
     FUNCTION      = "load_prompt"
     CATEGORY      = "🐯 YFG/📝 Prompts"
 
@@ -518,19 +523,21 @@ class YFGRandomPromptFromFile:
 
         if selection_mode == "by_index":
             idx = max(0, min(int(index), total - 1))
+            eff_lo = 0
+            eff_hi = total - 1
         else:
             # Resolve range
-            lo = max(0, min(int(range_start), total - 1))
-            hi = int(range_end) if int(range_end) > 0 else total - 1
-            hi = max(lo, min(hi, total - 1))
+            eff_lo = max(0, min(int(range_start), total - 1))
+            eff_hi = int(range_end) if int(range_end) > 0 else total - 1
+            eff_hi = max(eff_lo, min(eff_hi, total - 1))
 
             # last_n_only overrides lo to restrict pool to newest entries
             if last_n_only:
-                lo = max(lo, hi - int(last_n_count) + 1)
+                eff_lo = max(eff_lo, eff_hi - int(last_n_count) + 1)
 
             scope = f"file::{Path(prompt_file).resolve()}"
             idx   = self._pick(
-                lo, hi, scope, random_source, ensure_unique,
+                eff_lo, eff_hi, scope, random_source, ensure_unique,
                 history_size, time_window_sec, retry_limit, use_shuffle_bag,
             )
 
@@ -543,13 +550,22 @@ class YFGRandomPromptFromFile:
             f"idx={idx}/{total - 1}  name={name}"
         )
 
-        result = (positive, negative, name, int(idx), int(prev_idx), int(total))
+        result = (
+            positive, negative, name,
+            int(idx), int(prev_idx), int(total),
+            str(prompt_file),
+            Path(prompt_file).name,
+            int(eff_lo),
+            int(eff_hi),
+        )
 
         return {
             "ui": {
                 "yfg_pf_index_current":  (int(idx),),
                 "yfg_pf_index_previous": (int(prev_idx),),
                 "yfg_pf_total_count":    (int(total),),
+                "yfg_pf_range_start":    (int(eff_lo),),
+                "yfg_pf_range_end":      (int(eff_hi),),
             },
             "result": result,
         }
