@@ -7,6 +7,9 @@
               and multiple selection modes.
 
 Changelog:
+  1.1.1  Fixed first prompt silently dropped in files starting with a leading
+         separator line (e.g. "----" on line 1). Strip leading separator
+         before splitting so all prompts are counted and selectable.
   1.1.0  Simplified inputs: removed first_n/last_n/custom_range/n_pool.
          range_start/range_end auto-populate from file when selected in UI.
          Added last_n_only toggle + last_n_count to restrict pool to newest entries.
@@ -25,7 +28,7 @@ import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-NODE_VERSION = "1.1.0"
+NODE_VERSION = "1.1.1"
 
 # ─────────────────────────── file format ──────────────────────────────────────
 # Prompt file format:
